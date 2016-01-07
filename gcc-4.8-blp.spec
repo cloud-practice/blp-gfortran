@@ -38,8 +38,12 @@ programs and includes Bloomberg's custom libraries.
 
 
 %build
-%configure --enable-languages=fortran
+./contrib/download_prerequisites
+mkdir ../gcc-build
+pushd ../gcc-build
+../%{name}-%{version}/configure --enable-languages=fortran
 make %{?_smp_mflags}
+popd
 
 
 %install
