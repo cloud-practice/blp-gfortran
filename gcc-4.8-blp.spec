@@ -1,3 +1,6 @@
+%define debug_package %{nil}
+%define _unpackaged_files_terminate_build 0
+
 Name:           gcc-4.8-blp
 Version:        1.0.0
 Release:        1%{?dist}
@@ -48,10 +51,14 @@ popd
 
 %install
 rm -rf $RPM_BUILD_ROOT
+pushd ../gcc-build
 %make_install
+popd
 
 
 %files
+%defattr(-,root,root,-)
+
 %doc
 
 
