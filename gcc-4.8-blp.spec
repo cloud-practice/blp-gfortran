@@ -19,6 +19,7 @@ BuildRequires: gdb
 BuildRequires: glibc-devel >= 2.4.90-13
 BuildRequires: elfutils-devel >= 0.147
 BuildRequires: elfutils-libelf-devel >= 0.147
+BuildRequires: gmp-devel >= 4.1.2-8, mpfr-devel >= 2.2.1, libmpc-devel >= 0.8.1
 Requires: cpp
 Requires: binutils >= 2.20.51.0.2-12
 Conflicts: gdb < 5.1-2
@@ -28,9 +29,9 @@ Requires: libgomp
 Requires: libgfortran
 Requires: libquadmath
 Requires: libquadmath-devel
-BuildRequires: gmp-devel >= 4.1.2-8, mpfr-devel >= 2.2.1, libmpc-devel >= 0.8.1
 Requires(post): /sbin/install-info
 Requires(preun): /sbin/install-info
+AutoReq: 0
 
 %description
 This gcc package provides support for compiling Fortran
