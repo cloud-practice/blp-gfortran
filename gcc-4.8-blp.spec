@@ -58,8 +58,16 @@ popd
 
 %files
 %defattr(-,root,root,-)
+/usr/local/bin/*
+/usr/local/include/*
+/usr/local/lib/*
+/usr/local/lib/*
+/usr/local/lib64/*
+/usr/local/libexec/*
+/usr/local/share/*
 
-%doc
+%doc gcc/README* gcc/COPYING* COPYING.RUNTIME
+/usr/local/share/man/*
 
 
 
