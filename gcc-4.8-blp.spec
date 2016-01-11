@@ -62,7 +62,6 @@ popd
 %{_prefix}/bin/*
 %{_prefix}/include/*
 %{_prefix}/lib/*
-%{_prefix}/lib/*
 %{_prefix}/lib64/*
 %{_prefix}/libexec/*
 %{_prefix}/share/*
