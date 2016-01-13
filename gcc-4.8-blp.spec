@@ -45,7 +45,7 @@ programs and includes Bloomberg's custom libraries.
 ./contrib/download_prerequisites
 mkdir ../gcc-build
 pushd ../gcc-build
-../%{name}-%{version}/configure --enable-languages=fortran
+../%{name}-%{version}/configure --prefix=%{_prefix} --enable-languages=fortran
 make %{?_smp_mflags}
 popd
 
@@ -67,7 +67,7 @@ popd
 %{_prefix}/share/*
 
 %doc gcc/README* gcc/COPYING* COPYING.RUNTIME
-%{_prefix}/share/man/*
+#%{_prefix}/share/man/*
 
 
 
