@@ -1,3 +1,4 @@
+%define debug_package %{nil}
 %{?scl:%scl_package gcc}
 %{?scl:%global __strip strip}
 %{?scl:%global __objdump objdump}
