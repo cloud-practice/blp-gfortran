@@ -1,0 +1,32 @@
+From 74820e0aa9b88dcf01eb1034da2c77c98db1e910 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Mon, 7 Sep 2015 15:27:20 +0100
+Subject: [PATCH 05/47] Add test for duplicate type statements
+
+---
+ gcc/testsuite/gfortran.dg/duplicate_type_4.f90 | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+ create mode 100644 gcc/testsuite/gfortran.dg/duplicate_type_4.f90
+
+diff --git a/gcc/testsuite/gfortran.dg/duplicate_type_4.f90 b/gcc/testsuite/gfortran.dg/duplicate_type_4.f90
+new file mode 100644
+index 0000000..cdd29ea
+--- /dev/null
++++ b/gcc/testsuite/gfortran.dg/duplicate_type_4.f90
+@@ -0,0 +1,13 @@
++! { dg-do compile }
++! { dg-options "-std=f95" }
++
++! PR fortran/30239
++! Check for errors when a symbol gets declared a type twice, even if it
++! is the same.
++
++INTEGER FUNCTION foo ()
++  IMPLICIT NONE
++  INTEGER :: x
++  INTEGER :: x ! { dg-error "basic type of" }
++  x = 42
++END FUNCTION foo
+-- 
+1.9.1
+

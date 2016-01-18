@@ -1,0 +1,55 @@
+From e4d2ce4eb15959c67b6eba1f95926ea6532eb9cc Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Mon, 21 Sep 2015 14:24:12 +0100
+Subject: [PATCH 15/47] Add all warning messages to test cases
+
+---
+ .../gfortran.dg/hollerith-character-comparison.f90          | 13 +++++++------
+ gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90      |  8 ++++----
+ 2 files changed, 11 insertions(+), 10 deletions(-)
+
+diff --git a/gcc/testsuite/gfortran.dg/hollerith-character-comparison.f90 b/gcc/testsuite/gfortran.dg/hollerith-character-comparison.f90
+index a97f7a3..918f9b2 100644
+--- a/gcc/testsuite/gfortran.dg/hollerith-character-comparison.f90
++++ b/gcc/testsuite/gfortran.dg/hollerith-character-comparison.f90
+@@ -4,11 +4,12 @@
+       REAL*4 a
+       INTEGER*4 b
+       b = 1000
+-      print *, 4HJMAC.eq.4HJMAC
+-      print *, 4HJMAC.eq."JMAC"
+-      print *, 4HJMAC.eq."JMAN"
+-      print *, "JMAC".eq.4HJMAN
+-      print *, "AAAA".eq.5HAAAAA
+-      print *, "BBBBB".eq.5HBBBB
++      print *, 4HJMAC.eq.4HJMAC ! { dg-warning "Legacy Extension: Hollerith constant|Conversion from HOLLERITH" }
++      print *, 4HJMAC.eq."JMAC" ! { dg-warning "Legacy Extension: Hollerith constant|Conversion from HOLLERITH" }
++      print *, 4HJMAC.eq."JMAN" ! { dg-warning "Legacy Extension: Hollerith constant|Conversion from HOLLERITH" }
++      print *, "JMAC".eq.4HJMAN !  { dg-warning "Legacy Extension: Hollerith constant|Conversion from HOLLERITH" }
++      print *, "AAAA".eq.5HAAAAA ! { dg-warning "Legacy Extension: Hollerith constant|Conversion from HOLLERITH" }
++      print *, "BBBBB".eq.5HBBBB ! { dg-warning "Legacy Extension: Hollerith constant|Conversion from HOLLERITH" }
++
+       end program
+ 
+diff --git a/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90 b/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90
+index 61b6922..e9948e9 100644
+--- a/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90
++++ b/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90
+@@ -2,10 +2,10 @@
+ 
+       program convert
+       INTEGER*4 b
+-      b = 5HRIVET
+-      print *, 4HJMAC.eq.400 ! { dg-warning "Promoting argument for comparison from HOLLERITH" }
+-      print *, 4HRIVE.eq.1163282770 ! { dg-warning "Promoting argument for comparison from HOLLERITH" }
++      b = 5HRIVET ! { dg-warning "Legacy Extension: Hollerith constant|Conversion from HOLLERITH to INTEGER|too long to convert" }
++      print *, 4HJMAC.eq.400 ! { dg-warning "Legacy Extension: Hollerith constant|Promoting argument for comparison from HOLLERITH|Conversion from HOLLERITH to INTEGER" }
++      print *, 4HRIVE.eq.1163282770 ! { dg-warning "Legacy Extension: Hollerith constant|Promoting argument for comparison from HOLLERITH|Conversion from HOLLERITH to INTEGER" }
+       print *, b
+-      print *, 1163282770.eq.4HRIVE ! { dg-warning "Promoting argument for comparison from HOLLERITH" }
++      print *, 1163282770.eq.4HRIVE ! { dg-warning "Legacy Extension: Hollerith constant|Promoting argument for comparison from HOLLERITH|Conversion from HOLLERITH to INTEGER" }
+       end program
+ 
+-- 
+1.9.1
+

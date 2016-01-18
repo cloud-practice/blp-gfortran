@@ -1,0 +1,168 @@
+From 57fd95a9af6a15444fbf4b76b7b7f905559e1972 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Thu, 1 Oct 2015 17:03:27 +0100
+Subject: [PATCH 21/47] First stage support for default field widths in format
+ specifiers.
+
+---
+ gcc/fortran/io.c        | 14 ++++++++++++--
+ libgfortran/io/format.c |  6 ++++--
+ libgfortran/io/io.h     |  3 +++
+ libgfortran/io/write.c  | 34 +++++++++++++++++++++++++++-------
+ 4 files changed, 46 insertions(+), 11 deletions(-)
+
+diff --git a/gcc/fortran/io.c b/gcc/fortran/io.c
+index 1d46474..45ec61f 100644
+--- a/gcc/fortran/io.c
++++ b/gcc/fortran/io.c
+@@ -995,8 +995,18 @@ data_desc:
+ 	goto fail;
+       if (t != FMT_ZERO && t != FMT_POSINT)
+ 	{
+-	  error = nonneg_required;
+-	  goto syntax;
++	  if (gfc_option.flag_oracle_support)
++	    {
++	      /* Assume the default width is expected here and continue lexing.  */
++	      value = 0; /* It doesn't matter what we set the value to here.  */
++	      saved_token = t;
++	      break;
++	    }
++	  else
++	    {
++	      error = nonneg_required;
++	      goto syntax;
++	    }
+ 	}
+       else if (is_input && t == FMT_ZERO)
+ 	{
+diff --git a/libgfortran/io/format.c b/libgfortran/io/format.c
+index 3c685e3..c5c4a65 100644
+--- a/libgfortran/io/format.c
++++ b/libgfortran/io/format.c
+@@ -1017,8 +1017,10 @@ parse_format_list (st_parameter_dt *dtp, bool *seen_dd)
+ 	{
+ 	  if (t != FMT_ZERO && t != FMT_POSINT)
+ 	    {
+-	      fmt->error = nonneg_required;
+-	      goto finished;
++	      tail->u.integer.w = DEFAULT_WIDTH;
++	      tail->u.integer.m = -1;
++	      fmt->saved_token = t;
++	      break;
+ 	    }
+ 	}
+ 
+diff --git a/libgfortran/io/io.h b/libgfortran/io/io.h
+index e78f315..1843c00 100644
+--- a/libgfortran/io/io.h
++++ b/libgfortran/io/io.h
+@@ -809,5 +809,8 @@ memset4 (gfc_char4_t *p, gfc_char4_t c, int k)
+     *p++ = c;
+ }
+ 
++/* Used in width fields to indicate that the default should be used */
++#define DEFALUT_WIDTH -1
++
+ #endif
+ 
+diff --git a/libgfortran/io/write.c b/libgfortran/io/write.c
+index 4ef5586..6e6c858 100644
+--- a/libgfortran/io/write.c
++++ b/libgfortran/io/write.c
+@@ -548,9 +548,24 @@ write_l (st_parameter_dt *dtp, const fnode *f, char *source, int len)
+   p[wlen - 1] = (n) ? 'T' : 'F';
+ }
+ 
++static int
++default_width_for_len (int len)
++{
++  /* No width was specified in the format string, which is a legacy extension -
++     choose a default based on the data width.  */
++  switch (len)
++    {
++    case 1:
++    case 2:  return  7;
++    case 4:  return 12;
++    case 8:  return 23;
++    case 16: return 44;
++    default: return  0;
++    }
++}
+ 
+ static void
+-write_boz (st_parameter_dt *dtp, const fnode *f, const char *q, int n)
++write_boz (st_parameter_dt *dtp, const fnode *f, const char *q, int n, int len)
+ {
+   int w, m, digits, nzero, nblank;
+   char *p;
+@@ -583,6 +598,9 @@ write_boz (st_parameter_dt *dtp, const fnode *f, const char *q, int n)
+   /* Select a width if none was specified.  The idea here is to always
+      print something.  */
+ 
++  if (w == DEFAULT_WIDTH)
++    w = default_width_for_len (len);
++
+   if (w == 0)
+     w = ((digits < m) ? m : digits);
+ 
+@@ -709,6 +727,8 @@ write_decimal (st_parameter_dt *dtp, const fnode *f, const char *source,
+ 
+   /* Select a width if none was specified.  The idea here is to always
+      print something.  */
++  if (w == DEFAULT_WIDTH)
++    w = default_width_for_len(len);
+ 
+   if (w == 0)
+     w = ((digits < m) ? m : digits) + nsign;
+@@ -1092,13 +1112,13 @@ write_b (st_parameter_dt *dtp, const fnode *f, const char *source, int len)
+   if (len > (int) sizeof (GFC_UINTEGER_LARGEST))
+     {
+       p = btoa_big (source, itoa_buf, len, &n);
+-      write_boz (dtp, f, p, n);
++      write_boz (dtp, f, p, n, len);
+     }
+   else
+     {
+       n = extract_uint (source, len);
+       p = btoa (n, itoa_buf, sizeof (itoa_buf));
+-      write_boz (dtp, f, p, n);
++      write_boz (dtp, f, p, n, len);
+     }
+ }
+ 
+@@ -1113,13 +1133,13 @@ write_o (st_parameter_dt *dtp, const fnode *f, const char *source, int len)
+   if (len > (int) sizeof (GFC_UINTEGER_LARGEST))
+     {
+       p = otoa_big (source, itoa_buf, len, &n);
+-      write_boz (dtp, f, p, n);
++      write_boz (dtp, f, p, n, len);
+     }
+   else
+     {
+       n = extract_uint (source, len);
+       p = otoa (n, itoa_buf, sizeof (itoa_buf));
+-      write_boz (dtp, f, p, n);
++      write_boz (dtp, f, p, n, len);
+     }
+ }
+ 
+@@ -1133,13 +1153,13 @@ write_z (st_parameter_dt *dtp, const fnode *f, const char *source, int len)
+   if (len > (int) sizeof (GFC_UINTEGER_LARGEST))
+     {
+       p = ztoa_big (source, itoa_buf, len, &n);
+-      write_boz (dtp, f, p, n);
++      write_boz (dtp, f, p, n, len);
+     }
+   else
+     {
+       n = extract_uint (source, len);
+       p = gfc_xtoa (n, itoa_buf, sizeof (itoa_buf));
+-      write_boz (dtp, f, p, n);
++      write_boz (dtp, f, p, n, len);
+     }
+ }
+ 
+-- 
+1.9.1
+

@@ -1,0 +1,27 @@
+From 1f923d8231eceeab1a387642557f9840f5462150 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Mon, 7 Sep 2015 13:52:19 +0100
+Subject: [PATCH 06/47] Correct internal fault in select_type_9.f90
+
+---
+ gcc/fortran/symbol.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gcc/fortran/symbol.c b/gcc/fortran/symbol.c
+index 2d34e74..2aaa3f0 100644
+--- a/gcc/fortran/symbol.c
++++ b/gcc/fortran/symbol.c
+@@ -1718,8 +1718,8 @@ gfc_add_type (gfc_symbol *sym, gfc_typespec *ts, locus *where)
+ 		   &sym->declared_at);
+       else
+ 	{
+-          if (sym->ts.type == BT_DERIVED) {
+-	    /* Ignore temporaries */
++          if (sym->ts.type == BT_DERIVED || sym->ts.type == BT_CLASS || sym->ts.type == BT_PROCEDURE) {
++	    /* Ignore temporaries and class/procedure names */
+ 	    return FAILURE;
+ 	  }
+ 	  if (gfc_compare_types(&sym->ts, ts) && (flavor == FL_UNKNOWN || flavor == FL_VARIABLE))
+-- 
+1.9.1
+

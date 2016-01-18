@@ -1,0 +1,26 @@
+From 72ccb987fdcbefa5c17590dd382e87ec477fb9ba Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Wed, 7 Oct 2015 18:23:31 -0400
+Subject: [PATCH 29/47] Allow character-to-int conversions in DATA statements
+
+---
+ gcc/fortran/expr.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/gcc/fortran/expr.c b/gcc/fortran/expr.c
+index 0e89a4c..afa5bda 100644
+--- a/gcc/fortran/expr.c
++++ b/gcc/fortran/expr.c
+@@ -3258,6 +3258,9 @@ gfc_check_assign (gfc_expr *lvalue, gfc_expr *rvalue, int conform)
+ 	  || rvalue->ts.type == BT_HOLLERITH)
+ 	return SUCCESS;
+ 
++      if (gfc_option.flag_oracle_support && gfc_numeric_ts (&lvalue->ts) && rvalue->ts.type == BT_CHARACTER)
++	return SUCCESS;
++
+       if (lvalue->ts.type == BT_LOGICAL && rvalue->ts.type == BT_LOGICAL)
+ 	return SUCCESS;
+ 
+-- 
+1.9.1
+

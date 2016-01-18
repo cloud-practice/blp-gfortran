@@ -1,0 +1,69 @@
+From 3cd6cc1c1d2d4f93383c5b73a64f65d6e03dfa70 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Wed, 18 Nov 2015 11:50:41 +0000
+Subject: [PATCH 39/47] Allow calls to intrinsics with smaller types than
+ specified
+
+---
+ gcc/fortran/interface.c | 16 +++++++++++++++-
+ gcc/fortran/intrinsic.c | 10 ++++++++++
+ 2 files changed, 25 insertions(+), 1 deletion(-)
+
+diff --git a/gcc/fortran/interface.c b/gcc/fortran/interface.c
+index 2d73942..226d636 100644
+--- a/gcc/fortran/interface.c
++++ b/gcc/fortran/interface.c
+@@ -508,6 +508,20 @@ gfc_compare_types (gfc_typespec *ts1, gfc_typespec *ts2)
+   return gfc_compare_derived_types (ts1->u.derived ,ts2->u.derived);
+ }
+ 
++int
++gfc_compare_types_promotable (gfc_typespec *ts1, gfc_typespec *ts2)
++{
++  /* All this ultimately changes is the comparison of 'kind' in
++     gfc_compare_types. We could probably rearrange things to get rid of this
++     temporary variable. */
++
++  gfc_typespec temp = *ts2;
++  if (temp.kind <= ts1->kind)
++    temp.kind = ts1->kind;
++  return gfc_compare_types (ts1, &temp);
++}
++
++
+ 
+ /* Given two symbols that are formal arguments, compare their ranks
+    and types.  Returns nonzero if they have the same rank and type,
+@@ -1908,7 +1922,7 @@ compare_parameter (gfc_symbol *formal, gfc_expr *actual,
+   if ((actual->expr_type != EXPR_NULL || actual->ts.type != BT_UNKNOWN)
+       && actual->ts.type != BT_HOLLERITH
+       && formal->ts.type != BT_ASSUMED
+-      && !gfc_compare_types (&formal->ts, &actual->ts)
++      && !gfc_compare_types_promotable (&formal->ts, &actual->ts)
+       && !(formal->ts.type == BT_DERIVED && actual->ts.type == BT_CLASS
+ 	   && gfc_compare_derived_types (formal->ts.u.derived,
+ 					 CLASS_DATA (actual)->ts.u.derived)))
+diff --git a/gcc/fortran/intrinsic.c b/gcc/fortran/intrinsic.c
+index 00da01c..2640e6d 100644
+--- a/gcc/fortran/intrinsic.c
++++ b/gcc/fortran/intrinsic.c
+@@ -3647,6 +3647,16 @@ check_arglist (gfc_actual_arglist **ap, gfc_intrinsic_sym *sym,
+       if (ts.kind == 0)
+ 	ts.kind = actual->expr->ts.kind;
+ 
++      /* ts.kind is the argument spec. actual is what was passed. */
++
++      if (actual->expr->ts.kind < ts.kind
++	  && ts.type == BT_INTEGER)
++	{
++	  /* If it was OK to overwrite ts.kind in the previous case, it
++	     should be fine here... */
++	  ts.kind = actual->expr->ts.kind;
++	}
++
+       if (!gfc_compare_types (&ts, &actual->expr->ts))
+ 	{
+ 	  if (error_flag)
+-- 
+1.9.1
+

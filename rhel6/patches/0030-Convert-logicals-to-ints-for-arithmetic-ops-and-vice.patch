@@ -1,0 +1,61 @@
+From 8136bf606f419e103a954e94a334cf5366a3eb49 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Thu, 8 Oct 2015 14:33:27 -0400
+Subject: [PATCH 30/47] Convert logicals to ints for arithmetic ops, and vice
+ versa
+
+---
+ gcc/fortran/resolve.c | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/gcc/fortran/resolve.c b/gcc/fortran/resolve.c
+index c9af524..542d651 100644
+--- a/gcc/fortran/resolve.c
++++ b/gcc/fortran/resolve.c
+@@ -3908,6 +3908,20 @@ convert_integer_to_logical (gfc_expr *e)
+     }
+ }
+ 
++static void
++convert_logical_to_integer (gfc_expr *e)
++{
++  if (e->ts.type == BT_LOGICAL)
++    {
++      /* Convert to INTEGER */
++      gfc_typespec t;
++      t.type = BT_INTEGER;
++      t.kind = 1;
++      gfc_convert_type_warn (e, &t, 2, 1);
++    }
++}
++
++
+ /* Resolve an operator expression node.  This can involve replacing the
+    operation with a user defined function call.  */
+ 
+@@ -4025,6 +4039,10 @@ resolve_operator (gfc_expr *e)
+       goto bad_op;
+ 
+     case INTRINSIC_NOT:
++      if (gfc_option.flag_oracle_support)
++	{
++	  convert_integer_to_logical(op1);
++	}
+       if (op1->ts.type == BT_LOGICAL)
+ 	{
+ 	  e->ts.type = BT_LOGICAL;
+@@ -4057,6 +4075,11 @@ resolve_operator (gfc_expr *e)
+     case INTRINSIC_NE:
+     case INTRINSIC_NE_OS:
+ 
++      if (gfc_option.flag_oracle_support)
++	{
++	  convert_logical_to_integer(op1);
++	  convert_logical_to_integer(op2);
++	}
+       /* If you're comparing hollerith contants to character expresisons, convert the hollerith
+ 	 constant */
+       if (gfc_option.flag_oracle_support && is_character_based(op1->ts.type) && is_character_based(op2->ts.type))
+-- 
+1.9.1
+

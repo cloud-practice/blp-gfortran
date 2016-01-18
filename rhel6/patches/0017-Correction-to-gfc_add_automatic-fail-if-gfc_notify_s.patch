@@ -1,0 +1,31 @@
+From c29d26d290f759f4977d9c591f825414c5bc3f15 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Wed, 23 Sep 2015 11:41:06 +0100
+Subject: [PATCH 17/47] Correction to gfc_add_automatic: fail if gfc_notify_std
+ failed
+
+---
+ gcc/fortran/symbol.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/gcc/fortran/symbol.c b/gcc/fortran/symbol.c
+index 2aaa3f0..28acc75 100644
+--- a/gcc/fortran/symbol.c
++++ b/gcc/fortran/symbol.c
+@@ -1162,9 +1162,10 @@ gfc_add_automatic (symbol_attribute *attr,  const char *name, locus *where)
+   if (check_used (attr, name, where))
+     return FAILURE;
+ 
+-  gfc_notify_std (GFC_STD_LEGACY,
+-		  "AUTOMATIC attribute specified at %L",
+-		  where);
++  if (gfc_notify_std (GFC_STD_LEGACY,
++		      "AUTOMATIC attribute specified at %L",
++		      where) == FAILURE)
++    return FAILURE;
+ 
+   attr->automatic = 1;
+   return check_conflict (attr, name, where);
+-- 
+1.9.1
+

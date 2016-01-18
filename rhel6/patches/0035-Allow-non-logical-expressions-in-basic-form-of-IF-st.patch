@@ -1,0 +1,43 @@
+From 0390b5c1a96460234badc062d528fc95d4d64950 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Wed, 11 Nov 2015 18:45:13 +0000
+Subject: [PATCH 35/47] Allow non-logical expressions in basic form of IF
+ statement
+
+---
+ gcc/fortran/match.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/gcc/fortran/match.c b/gcc/fortran/match.c
+index 33ad0fa..ceae42c 100644
+--- a/gcc/fortran/match.c
++++ b/gcc/fortran/match.c
+@@ -26,6 +26,7 @@ along with GCC; see the file COPYING3.  If not see
+ #include "match.h"
+ #include "parse.h"
+ #include "tree.h"
++#include "arith.h"
+ 
+ int gfc_matching_ptr_assignment = 0;
+ int gfc_matching_procptr_assignment = 0;
+@@ -1615,7 +1616,16 @@ got_match:
+   *p->next = new_st;
+   p->next->loc = gfc_current_locus;
+ 
+-  p->expr1 = expr;
++
++  if (gfc_option.flag_oracle_support && expr->ts.type != BT_LOGICAL)
++    {
++      p->expr1 = gfc_ne (expr, gfc_get_int_expr (1, &gfc_current_locus, 0), INTRINSIC_NE);
++      gfc_warning_now ("The type of condition in this IF statement isn't LOGICAL; it will be true if it evaluates to nonzero.", expr->ts.type);
++    }
++  else
++    {
++      p->expr1 = expr;
++    }
+   p->op = EXEC_IF;
+ 
+   gfc_clear_new_st ();
+-- 
+1.9.1
+

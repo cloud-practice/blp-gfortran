@@ -1,0 +1,27 @@
+From 09d6debef4a2bd2dacac93b97e4f3fe6fa62051b Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Wed, 9 Sep 2015 12:09:54 +0100
+Subject: [PATCH 08/47] Fix warning message for underspecified arrays
+
+---
+ gcc/fortran/resolve.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gcc/fortran/resolve.c b/gcc/fortran/resolve.c
+index ae22294..b50fd38 100644
+--- a/gcc/fortran/resolve.c
++++ b/gcc/fortran/resolve.c
+@@ -4540,8 +4540,8 @@ compare_spec_to_ref (gfc_array_ref *ar)
+       /* Add in the missing dimensions, assuming they are the lower bound
+          of that dimension if not specified. */
+       int j;
+-      gfc_warning (0, "Using the lower bound for unspecified dimensions "
+-                      "in array reference at %L", &ar->where);
++      gfc_warning ("Using the lower bound for unspecified dimensions "
++                   "in array reference at %L", &ar->where);
+       /* Other parts of the code iterate ar->start and ar->end from 0 to
+ 	 ar->dimen, so it is safe to assume slots from ar->dimen upwards
+ 	 are unused (i.e. there are no gaps; the specified indexes are
+-- 
+1.9.1
+

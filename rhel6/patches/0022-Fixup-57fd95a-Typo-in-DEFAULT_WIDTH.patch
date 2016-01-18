@@ -1,0 +1,25 @@
+From e2e7e3e17c867b527d4363b2d64d74be5e9ea460 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Thu, 1 Oct 2015 17:31:28 +0100
+Subject: [PATCH 22/47] Fixup 57fd95a: Typo in DEFAULT_WIDTH.
+
+---
+ libgfortran/io/io.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libgfortran/io/io.h b/libgfortran/io/io.h
+index 1843c00..95d46f0 100644
+--- a/libgfortran/io/io.h
++++ b/libgfortran/io/io.h
+@@ -810,7 +810,7 @@ memset4 (gfc_char4_t *p, gfc_char4_t c, int k)
+ }
+ 
+ /* Used in width fields to indicate that the default should be used */
+-#define DEFALUT_WIDTH -1
++#define DEFAULT_WIDTH -1
+ 
+ #endif
+ 
+-- 
+1.9.1
+
