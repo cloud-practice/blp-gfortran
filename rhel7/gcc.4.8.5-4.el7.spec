@@ -2665,7 +2665,7 @@ fi
 %dir %{_prefix}/lib/gcc/%{gcc_target_platform}
 %dir %{_prefix}/lib/gcc/%{gcc_target_platform}/%{gcc_version}
 %if "%{version}" != "%{gcc_version}"
-%{_prefix}/lib/gcc/%{gcc_target_platform}/%{verion}
+%{_prefix}/lib/gcc/%{gcc_target_platform}/%{version}
 %endif
 %dir %{_prefix}/libexec/gcc
 %dir %{_prefix}/libexec/gcc/%{gcc_target_platform}
