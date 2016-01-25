@@ -1,0 +1,161 @@
+From 9090cc442a33a5e5cea06e07799551e1260f5b69 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Wed, 16 Sep 2015 17:45:44 +0100
+Subject: [PATCH 13/47] Support comparison between HOLLERITH and CHARACTER plus
+ test case
+
+---
+ gcc/fortran/gfortran.h                             |  1 +
+ gcc/fortran/intrinsic.c                            |  1 +
+ gcc/fortran/lang.opt                               |  4 +++
+ gcc/fortran/resolve.c                              | 40 ++++++++++++++++++++++
+ .../gfortran.dg/hollerith-character-comparison.f90 | 14 ++++++++
+ .../gfortran.dg/hollerith-int-comparison.f90       | 11 ++++++
+ 6 files changed, 71 insertions(+)
+ create mode 100644 gcc/testsuite/gfortran.dg/hollerith-character-comparison.f90
+ create mode 100644 gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90
+
+diff --git a/gcc/fortran/gfortran.h b/gcc/fortran/gfortran.h
+index 0af86f3..4a3edb5 100644
+--- a/gcc/fortran/gfortran.h
++++ b/gcc/fortran/gfortran.h
+@@ -2306,6 +2306,7 @@ typedef struct
+   int fpe;
+   int rtcheck;
+   gfc_fcoarray coarray;
++  int flag_oracle_support;
+ 
+   int warn_std;
+   int allow_std;
+diff --git a/gcc/fortran/intrinsic.c b/gcc/fortran/intrinsic.c
+index 7d78419..be0e822 100644
+--- a/gcc/fortran/intrinsic.c
++++ b/gcc/fortran/intrinsic.c
+@@ -142,6 +142,7 @@ find_conv (gfc_typespec *from, gfc_typespec *to)
+   int i;
+ 
+   target = conv_name (from, to);
++
+   sym = conversion;
+ 
+   for (i = 0; i < nconv; i++, sym++)
+diff --git a/gcc/fortran/lang.opt b/gcc/fortran/lang.opt
+index dcdefa1..f0434cd 100644
+--- a/gcc/fortran/lang.opt
++++ b/gcc/fortran/lang.opt
+@@ -325,6 +325,10 @@ fallow-leading-underscore
+ Fortran Undocumented
+ ; For internal use only: allow the first character of symbol names to be an underscore
+ 
++foracle-support
++Fortran
++; Supports some extra features also supported by the Oracle Fortran compiler.
++
+ fautomatic
+ Fortran
+ Do not treat local variables and COMMON blocks as if they were named in SAVE statements
+diff --git a/gcc/fortran/resolve.c b/gcc/fortran/resolve.c
+index b50fd38..300f9f4 100644
+--- a/gcc/fortran/resolve.c
++++ b/gcc/fortran/resolve.c
+@@ -3889,6 +3889,11 @@ compare_shapes (gfc_expr *op1, gfc_expr *op2)
+   return t;
+ }
+ 
++static int
++is_character_based (bt type)
++{
++  return type == BT_CHARACTER || type == BT_HOLLERITH;
++}
+ 
+ /* Resolve an operator expression node.  This can involve replacing the
+    operation with a user defined function call.  */
+@@ -4033,6 +4038,22 @@ resolve_operator (gfc_expr *e)
+     case INTRINSIC_EQ_OS:
+     case INTRINSIC_NE:
+     case INTRINSIC_NE_OS:
++
++      /* If you're comparing hollerith contants to character expresisons, convert the hollerith
++	 constant */
++      if (gfc_option.flag_oracle_support && is_character_based(op1->ts.type) && is_character_based(op2->ts.type))
++	{
++	  gfc_typespec ts;
++	  ts.type = BT_CHARACTER;
++	  ts.kind = op1->ts.kind;
++	  if (op1->ts.type == BT_HOLLERITH)
++	    gfc_convert_type_warn (op1, &ts, 2, 1);
++	  ts.type = BT_CHARACTER;
++	  ts.kind = op2->ts.kind;
++	  if (op2->ts.type == BT_HOLLERITH)
++	    gfc_convert_type_warn (op2, &ts, 2, 1);
++	}
++
+       if (op1->ts.type == BT_CHARACTER && op2->ts.type == BT_CHARACTER
+ 	  && op1->ts.kind == op2->ts.kind)
+ 	{
+@@ -4041,6 +4062,25 @@ resolve_operator (gfc_expr *e)
+ 	  break;
+ 	}
+ 
++
++      if(gfc_option.flag_oracle_support && gfc_numeric_ts(&op1->ts) && op2->ts.type == BT_HOLLERITH)
++	{
++	  gfc_warning("Promoting argument for comparison from HOLLERITH to INTEGER at %L", &op2->where);
++	  gfc_typespec ts;
++	  ts.type = BT_INTEGER;
++	  ts.kind = 4;
++	  gfc_convert_type_warn (op2, &ts, 2, 1);
++	}
++
++      if(gfc_option.flag_oracle_support && gfc_numeric_ts(&op2->ts) && op1->ts.type == BT_HOLLERITH)
++	{
++	  gfc_warning("Promoting argument for comparison from HOLLERITH to INTEGER at %L", &op1->where);
++	  gfc_typespec ts;
++	  ts.type = BT_INTEGER;
++	  ts.kind = 4;
++	  gfc_convert_type_warn (op1, &ts, 2, 1);
++	}
++
+       if (gfc_numeric_ts (&op1->ts) && gfc_numeric_ts (&op2->ts))
+ 	{
+ 	  gfc_type_convert_binary (e, 1);
+diff --git a/gcc/testsuite/gfortran.dg/hollerith-character-comparison.f90 b/gcc/testsuite/gfortran.dg/hollerith-character-comparison.f90
+new file mode 100644
+index 0000000..a97f7a3
+--- /dev/null
++++ b/gcc/testsuite/gfortran.dg/hollerith-character-comparison.f90
+@@ -0,0 +1,14 @@
++       ! { dg-options "-foracle-support" }
++
++      program convert
++      REAL*4 a
++      INTEGER*4 b
++      b = 1000
++      print *, 4HJMAC.eq.4HJMAC
++      print *, 4HJMAC.eq."JMAC"
++      print *, 4HJMAC.eq."JMAN"
++      print *, "JMAC".eq.4HJMAN
++      print *, "AAAA".eq.5HAAAAA
++      print *, "BBBBB".eq.5HBBBB
++      end program
++
+diff --git a/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90 b/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90
+new file mode 100644
+index 0000000..61b6922
+--- /dev/null
++++ b/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90
+@@ -0,0 +1,11 @@
++       ! { dg-options "-foracle-support" }
++
++      program convert
++      INTEGER*4 b
++      b = 5HRIVET
++      print *, 4HJMAC.eq.400 ! { dg-warning "Promoting argument for comparison from HOLLERITH" }
++      print *, 4HRIVE.eq.1163282770 ! { dg-warning "Promoting argument for comparison from HOLLERITH" }
++      print *, b
++      print *, 1163282770.eq.4HRIVE ! { dg-warning "Promoting argument for comparison from HOLLERITH" }
++      end program
++
+-- 
+1.9.1
+

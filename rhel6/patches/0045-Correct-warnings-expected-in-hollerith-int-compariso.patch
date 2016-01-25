@@ -1,0 +1,30 @@
+From 67b6bc0d78abd1e1ceb984538a64b0dcc1368a97 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Wed, 16 Dec 2015 17:00:19 +0000
+Subject: [PATCH 45/47] Correct warnings expected in hollerith-int-comparison
+ test
+
+---
+ gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90 | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90 b/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90
+index e9948e9..ad917e1 100644
+--- a/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90
++++ b/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90
+@@ -3,9 +3,9 @@
+       program convert
+       INTEGER*4 b
+       b = 5HRIVET ! { dg-warning "Legacy Extension: Hollerith constant|Conversion from HOLLERITH to INTEGER|too long to convert" }
+-      print *, 4HJMAC.eq.400 ! { dg-warning "Legacy Extension: Hollerith constant|Promoting argument for comparison from HOLLERITH|Conversion from HOLLERITH to INTEGER" }
+-      print *, 4HRIVE.eq.1163282770 ! { dg-warning "Legacy Extension: Hollerith constant|Promoting argument for comparison from HOLLERITH|Conversion from HOLLERITH to INTEGER" }
++      print *, 4HJMAC.eq.400 ! { dg-warning "Legacy Extension: Hollerith constant|Promoting argument for comparison from character|Conversion from HOLLERITH to INTEGER" }
++      print *, 4HRIVE.eq.1163282770 ! { dg-warning "Legacy Extension: Hollerith constant|Promoting argument for comparison from character|Conversion from HOLLERITH to INTEGER" }
+       print *, b
+-      print *, 1163282770.eq.4HRIVE ! { dg-warning "Legacy Extension: Hollerith constant|Promoting argument for comparison from HOLLERITH|Conversion from HOLLERITH to INTEGER" }
++      print *, 1163282770.eq.4HRIVE ! { dg-warning "Legacy Extension: Hollerith constant|Promoting argument for comparison from character|Conversion from HOLLERITH to INTEGER" }
+       end program
+ 
+-- 
+1.9.1
+

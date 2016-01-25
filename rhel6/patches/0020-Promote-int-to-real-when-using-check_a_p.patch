@@ -1,0 +1,51 @@
+From ce9bab53cd2db668d9f17e0cdb488d54fc3c96fd Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Tue, 29 Sep 2015 16:05:09 +0100
+Subject: [PATCH 20/47] Promote int to real when using check_a_p
+
+---
+ gcc/fortran/check.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/gcc/fortran/check.c b/gcc/fortran/check.c
+index 7956a51..afea545 100644
+--- a/gcc/fortran/check.c
++++ b/gcc/fortran/check.c
+@@ -844,6 +844,24 @@ gfc_check_allocated (gfc_expr *array)
+ }
+ 
+ 
++/* Attempt to promote types so that both types are equivalent, if possible */
++void
++promote_types(gfc_expr *a, gfc_expr *b)
++{
++  if(a->ts.type == b->ts.type) return;
++  if(a->ts.type == BT_REAL && b->ts.type == BT_INTEGER)
++    {
++      gfc_convert_type_warn (b, &a->ts, 2, 1);
++      return;
++    }
++  if(a->ts.type == BT_INTEGER && b->ts.type == BT_REAL)
++    {
++      gfc_convert_type_warn (a, &b->ts, 2, 1);
++    }
++}
++
++
++
+ /* Common check function where the first argument must be real or
+    integer and the second argument must be the same as the first.  */
+ 
+@@ -853,6 +871,9 @@ gfc_check_a_p (gfc_expr *a, gfc_expr *p)
+   if (int_or_real_check (a, 0) == FAILURE)
+     return FAILURE;
+ 
++  if (gfc_option.flag_oracle_support)
++    promote_types(a, p);
++
+   if (a->ts.type != p->ts.type)
+     {
+       gfc_error ("'%s' and '%s' arguments of '%s' intrinsic at %L must "
+-- 
+1.9.1
+

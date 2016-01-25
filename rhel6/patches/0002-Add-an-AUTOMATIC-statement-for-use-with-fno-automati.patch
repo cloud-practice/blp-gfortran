@@ -1,0 +1,273 @@
+From beb86f38c772d03f3e50f4094cd0d9a07d4dd123 Mon Sep 17 00:00:00 2001
+From: Mark Doffman <mark.doffman@codethink.co.uk>
+Date: Tue, 28 Jan 2014 20:16:09 +0000
+Subject: [PATCH 02/47] Add an AUTOMATIC statement for use with -fno-automatic.
+
+Add an AUTOMATIC statement and attribute specification
+that places data objects back on the stack when otherwise
+they would be statically assigned.
+---
+ gcc/fortran/decl.c       | 55 +++++++++++++++++++++++++++++++++++++++++++++---
+ gcc/fortran/gfortran.h   |  7 ++++--
+ gcc/fortran/match.h      |  1 +
+ gcc/fortran/parse.c      |  2 ++
+ gcc/fortran/symbol.c     | 51 +++++++++++++++++++++++++++++++++++++++++---
+ gcc/fortran/trans-decl.c |  1 +
+ 6 files changed, 109 insertions(+), 8 deletions(-)
+
+diff --git a/gcc/fortran/decl.c b/gcc/fortran/decl.c
+index e73e32d..d5a3e81 100644
+--- a/gcc/fortran/decl.c
++++ b/gcc/fortran/decl.c
+@@ -3311,9 +3311,9 @@ match_attr_spec (void)
+     DECL_ALLOCATABLE = GFC_DECL_BEGIN, DECL_DIMENSION, DECL_EXTERNAL,
+     DECL_IN, DECL_OUT, DECL_INOUT, DECL_INTRINSIC, DECL_OPTIONAL,
+     DECL_PARAMETER, DECL_POINTER, DECL_PROTECTED, DECL_PRIVATE,
+-    DECL_PUBLIC, DECL_SAVE, DECL_TARGET, DECL_VALUE, DECL_VOLATILE,
+-    DECL_IS_BIND_C, DECL_CODIMENSION, DECL_ASYNCHRONOUS, DECL_CONTIGUOUS,
+-    DECL_NONE, GFC_DECL_END /* Sentinel */
++    DECL_PUBLIC, DECL_SAVE, DECL_AUTOMATIC, DECL_TARGET, DECL_VALUE,
++    DECL_VOLATILE, DECL_IS_BIND_C, DECL_CODIMENSION, DECL_ASYNCHRONOUS,
++    DECL_CONTIGUOUS, DECL_NONE, GFC_DECL_END /* Sentinel */
+   };
+ 
+ /* GFC_DECL_END is the sentinel, index starts at 0.  */
+@@ -3374,6 +3374,14 @@ match_attr_spec (void)
+ 		      d = DECL_ASYNCHRONOUS;
+ 		    }
+ 		  break;
++
++		case 'u':
++		  if (match_string_p ("tomatic"))
++		    {
++		      /* Matched "automatic".  */
++		      d = DECL_AUTOMATIC;
++		    }
++		  break;
+ 		}
+ 	      break;
+ 
+@@ -3640,6 +3648,9 @@ match_attr_spec (void)
+ 	  case DECL_SAVE:
+ 	    attr = "SAVE";
+ 	    break;
++	  case DECL_AUTOMATIC:
++	    attr = "AUTOMATIC";
++	    break;
+ 	  case DECL_TARGET:
+ 	    attr = "TARGET";
+ 	    break;
+@@ -3816,6 +3827,10 @@ match_attr_spec (void)
+ 	  t = gfc_add_save (&current_attr, SAVE_EXPLICIT, NULL, &seen_at[d]);
+ 	  break;
+ 
++	case DECL_AUTOMATIC:
++	  t = gfc_add_automatic (&current_attr, NULL, &seen_at[d]);
++	  break;
++
+ 	case DECL_TARGET:
+ 	  t = gfc_add_target (&current_attr, &seen_at[d]);
+ 	  break;
+@@ -7109,6 +7124,40 @@ syntax:
+   return MATCH_ERROR;
+ }
+ 
++match
++gfc_match_automatic (void)
++{
++  gfc_symbol *sym;
++  match m;
++
++  gfc_match (" ::");
++
++  for (;;)
++    {
++      m = gfc_match_symbol (&sym, 0);
++      switch (m)
++	{
++	case MATCH_YES:
++	  if (!gfc_add_automatic (&sym->attr, sym->name,
++			     &gfc_current_locus))
++	    return MATCH_ERROR;
++	  if (gfc_match_eos () == MATCH_YES)
++	    return MATCH_YES;
++	  if (gfc_match_char (',') != MATCH_YES)
++	    goto syntax;
++	  break;
++	case MATCH_NO:
++	  goto syntax;
++	case MATCH_ERROR:
++	  return MATCH_ERROR;
++	}
++    }
++
++syntax:
++  gfc_error ("Syntax error in AUTOMATIC statement at %C");
++  return MATCH_ERROR;
++}
++
+ 
+ match
+ gfc_match_value (void)
+diff --git a/gcc/fortran/gfortran.h b/gcc/fortran/gfortran.h
+index 2428b51..0af86f3 100644
+--- a/gcc/fortran/gfortran.h
++++ b/gcc/fortran/gfortran.h
+@@ -702,7 +702,7 @@ typedef struct
+     optional:1, pointer:1, target:1, value:1, volatile_:1, temporary:1,
+     dummy:1, result:1, assign:1, threadprivate:1, not_always_present:1,
+     implied_index:1, subref_array_pointer:1, proc_pointer:1, asynchronous:1,
+-    contiguous:1;
++    contiguous:1, automatic:1;
+ 
+   /* For CLASS containers, the pointer attribute is sometimes set internally
+      even though it was not directly specified.  In this case, keep the
+@@ -2566,6 +2566,7 @@ gfc_try gfc_add_pointer (symbol_attribute *, locus *);
+ gfc_try gfc_add_cray_pointer (symbol_attribute *, locus *);
+ gfc_try gfc_add_cray_pointee (symbol_attribute *, locus *);
+ match gfc_mod_pointee_as (gfc_array_spec *);
++
+ gfc_try gfc_add_protected (symbol_attribute *, const char *, locus *);
+ gfc_try gfc_add_result (symbol_attribute *, const char *, locus *);
+ gfc_try gfc_add_save (symbol_attribute *, save_state, const char *, locus *);
+@@ -2597,7 +2598,9 @@ gfc_try gfc_add_value (symbol_attribute *, const char *, locus *);
+ gfc_try gfc_add_flavor (symbol_attribute *, sym_flavor, const char *, locus *);
+ gfc_try gfc_add_entry (symbol_attribute *, const char *, locus *);
+ gfc_try gfc_add_procedure (symbol_attribute *, procedure_type,
+-		       const char *, locus *);
++			   const char *, locus *);
++gfc_try gfc_add_automatic (symbol_attribute *, const char *, locus *);
++
+ gfc_try gfc_add_intent (symbol_attribute *, sym_intent, locus *);
+ gfc_try gfc_add_explicit_interface (gfc_symbol *, ifsrc,
+ 				gfc_formal_arglist *, locus *);
+diff --git a/gcc/fortran/match.h b/gcc/fortran/match.h
+index 48aa405..16b1cc9 100644
+--- a/gcc/fortran/match.h
++++ b/gcc/fortran/match.h
+@@ -185,6 +185,7 @@ match gfc_match_protected (void);
+ match gfc_match_private (gfc_statement *);
+ match gfc_match_public (gfc_statement *);
+ match gfc_match_save (void);
++match gfc_match_automatic (void);
+ match gfc_match_modproc (void);
+ match gfc_match_target (void);
+ match gfc_match_value (void);
+diff --git a/gcc/fortran/parse.c b/gcc/fortran/parse.c
+index f748fe3..68c940e 100644
+--- a/gcc/fortran/parse.c
++++ b/gcc/fortran/parse.c
+@@ -162,6 +162,7 @@ decode_specification_statement (void)
+ 	     ST_INTERFACE);
+       match ("allocatable", gfc_match_allocatable, ST_ATTR_DECL);
+       match ("asynchronous", gfc_match_asynchronous, ST_ATTR_DECL);
++      match ("automatic", gfc_match_automatic, ST_ATTR_DECL);
+       break;
+ 
+     case 'b':
+@@ -384,6 +385,7 @@ decode_statement (void)
+       match ("allocatable", gfc_match_allocatable, ST_ATTR_DECL);
+       match ("assign", gfc_match_assign, ST_LABEL_ASSIGNMENT);
+       match ("asynchronous", gfc_match_asynchronous, ST_ATTR_DECL);
++      match ("automatic", gfc_match_automatic, ST_ATTR_DECL);
+       break;
+ 
+     case 'b':
+diff --git a/gcc/fortran/symbol.c b/gcc/fortran/symbol.c
+index 785f582..7751785 100644
+--- a/gcc/fortran/symbol.c
++++ b/gcc/fortran/symbol.c
+@@ -347,9 +347,9 @@ gfc_check_function_type (gfc_namespace *ns)
+ static gfc_try
+ check_conflict (symbol_attribute *attr, const char *name, locus *where)
+ {
+-  static const char *dummy = "DUMMY", *save = "SAVE", *pointer = "POINTER",
+-    *target = "TARGET", *external = "EXTERNAL", *intent = "INTENT",
+-    *intent_in = "INTENT(IN)", *intrinsic = "INTRINSIC",
++  static const char *dummy = "DUMMY", *save = "SAVE", *automatic = "AUTOMATIC",
++    *pointer = "POINTER", *target = "TARGET", *external = "EXTERNAL",
++    *intent = "INTENT", *intent_in = "INTENT(IN)", *intrinsic = "INTRINSIC",
+     *intent_out = "INTENT(OUT)", *intent_inout = "INTENT(INOUT)",
+     *allocatable = "ALLOCATABLE", *elemental = "ELEMENTAL",
+     *privat = "PRIVATE", *recursive = "RECURSIVE",
+@@ -416,6 +416,35 @@ check_conflict (symbol_attribute *attr, const char *name, locus *where)
+ 	}
+     }
+ 
++  if (attr->automatic)
++    {
++      conf (save, automatic);
++      conf (data, automatic);
++      conf (in_common, automatic);
++
++      switch (attr->flavor)
++	{
++	  case FL_PROGRAM:
++	  case FL_BLOCK_DATA:
++	  case FL_MODULE:
++	  case FL_LABEL:
++	  case FL_DERIVED:
++	  case FL_PARAMETER:
++            a1 = gfc_code2string (flavors, attr->flavor);
++            a2 = save;
++	    goto conflict;
++	  case FL_NAMELIST:
++	    gfc_error ("Namelist group name at %L cannot have the "
++		       "AUTOMATIC attribute", where);
++	    return FAILURE;
++	    break;
++	  case FL_PROCEDURE:
++	  case FL_VARIABLE:
++	  default:
++	    break;
++	}
++    }
++
+   if (attr->save == SAVE_EXPLICIT)
+     {
+       conf (dummy, save);
+@@ -1126,6 +1155,20 @@ gfc_add_save (symbol_attribute *attr, save_state s, const char *name,
+   return check_conflict (attr, name, where);
+ }
+ 
++gfc_try
++gfc_add_automatic (symbol_attribute *attr,  const char *name, locus *where)
++{
++
++  if (check_used (attr, name, where))
++    return FAILURE;
++
++  gfc_notify_std (GFC_STD_LEGACY,
++		  "AUTOMATIC attribute specified at %L",
++		  where);
++
++  attr->automatic = 1;
++  return check_conflict (attr, name, where);
++}
+ 
+ gfc_try
+ gfc_add_value (symbol_attribute *attr, const char *name, locus *where)
+@@ -1751,6 +1794,8 @@ gfc_copy_attr (symbol_attribute *dest, symbol_attribute *src, locus *where)
+     goto fail;
+   if (src->save && gfc_add_save (dest, src->save, NULL, where) == FAILURE)
+     goto fail;
++  if (src->automatic && gfc_add_automatic (dest, NULL, where) == FAILURE)
++    goto fail;
+   if (src->value && gfc_add_value (dest, NULL, where) == FAILURE)
+     goto fail;
+   if (src->volatile_ && gfc_add_volatile (dest, NULL, where) == FAILURE)
+diff --git a/gcc/fortran/trans-decl.c b/gcc/fortran/trans-decl.c
+index b473d66..6572794 100644
+--- a/gcc/fortran/trans-decl.c
++++ b/gcc/fortran/trans-decl.c
+@@ -596,6 +596,7 @@ gfc_finish_var_decl (tree decl, gfc_symbol * sym)
+   if (!sym->ns->proc_name->attr.recursive
+       && INTEGER_CST_P (DECL_SIZE_UNIT (decl))
+       && !gfc_can_put_var_on_stack (DECL_SIZE_UNIT (decl))
++      && !sym->attr.automatic
+ 	 /* Put variable length auto array pointers always into stack.  */
+       && (TREE_CODE (TREE_TYPE (decl)) != POINTER_TYPE
+ 	  || sym->attr.dimension == 0
+-- 
+1.9.1
+

@@ -1,0 +1,40 @@
+From 04e197f4963711f3d61fde845000e4fccd45b3a4 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Fri, 25 Sep 2015 16:39:38 +0100
+Subject: [PATCH 18/47] Correct error in character2representation
+
+Turns out string constants are stored as null-terminated arrays of
+gfc_char_t (4 bytes) rather than chars.
+---
+ gcc/fortran/arith.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/gcc/fortran/arith.c b/gcc/fortran/arith.c
+index 87309f2..a553445 100644
+--- a/gcc/fortran/arith.c
++++ b/gcc/fortran/arith.c
+@@ -2294,7 +2294,7 @@ static void
+ character2representation (gfc_expr *result, gfc_expr *src)
+ {
+   int src_len, result_len;
+-
++  int i;
+   src_len = src->value.character.length;
+   result_len = gfc_target_expr_size (result);
+ 
+@@ -2305,8 +2305,10 @@ character2representation (gfc_expr *result, gfc_expr *src)
+     }
+ 
+   result->representation.string = XCNEWVEC (char, result_len + 1);
+-  memcpy (result->representation.string, src->value.character.string,
+-	  MIN (result_len, src_len));
++
++  for(i=0;i<MIN (result_len, src_len);i++) {
++    result->representation.string[i] = (char) src->value.character.string[i];
++  }
+ 
+   if (src_len < result_len)
+     memset (&result->representation.string[src_len], ' ', result_len - src_len);
+-- 
+1.9.1
+

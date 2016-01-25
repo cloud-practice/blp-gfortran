@@ -1,0 +1,41 @@
+From b0f62152e09ffce0221b90b0716885f0f3d96fa8 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Wed, 18 Nov 2015 15:08:56 +0000
+Subject: [PATCH 41/47] Add the SEQUENCE attribute by default if it's not
+ present.
+
+---
+ gcc/fortran/resolve.c | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/gcc/fortran/resolve.c b/gcc/fortran/resolve.c
+index 200bbcd..1593f7a 100644
+--- a/gcc/fortran/resolve.c
++++ b/gcc/fortran/resolve.c
+@@ -924,10 +924,19 @@ resolve_common_vars (gfc_symbol *sym, bool named_common)
+ 	continue;
+ 
+       if (!(csym->ts.u.derived->attr.sequence
+-	    || csym->ts.u.derived->attr.is_bind_c))
+-	gfc_error_now ("Derived type variable '%s' in COMMON at %L "
+-		       "has neither the SEQUENCE nor the BIND(C) "
+-		       "attribute", csym->name, &csym->declared_at);
++	    || csym->ts.u.derived->attr.is_bind_c)) {
++	if (gfc_option.flag_oracle_support)
++	  {
++	    /* Assume sequence. */
++	    csym->ts.u.derived->attr.sequence = 1;
++	  }
++	else
++	  {
++	    gfc_error_now ("Derived type variable '%s' in COMMON at %L "
++			   "has neither the SEQUENCE nor the BIND(C) "
++			   "attribute", csym->name, &csym->declared_at);
++	  }
++      }
+       if (csym->ts.u.derived->attr.alloc_comp)
+ 	gfc_error_now ("Derived type variable '%s' in COMMON at %L "
+ 		       "has an ultimate component that is "
+-- 
+1.9.1
+

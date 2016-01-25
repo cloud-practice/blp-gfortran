@@ -1,0 +1,45 @@
+From 4478bf27f6bf17e4fea5688c41239aa01120d698 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Mon, 28 Sep 2015 16:06:30 +0100
+Subject: [PATCH 19/47] Pad character-to-int conversions with spaces instead of
+ zeros.
+
+The pad character is 'undefined' or 'processor dependent' depending on which
+standard you read. This makes it 0x20 which matches the Oracle Fortran
+compiler. One of the tests tests this undefined behaviour, so I had to modify
+it.
+---
+ gcc/fortran/simplify.c                       | 2 +-
+ gcc/testsuite/gfortran.dg/c_ptr_tests_16.f90 | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/gcc/fortran/simplify.c b/gcc/fortran/simplify.c
+index 4b600c1..85b1c3e 100644
+--- a/gcc/fortran/simplify.c
++++ b/gcc/fortran/simplify.c
+@@ -6090,7 +6090,7 @@ gfc_simplify_transfer (gfc_expr *source, gfc_expr *mold, gfc_expr *size)
+   /* Allocate the buffer to store the binary version of the source.  */
+   buffer_size = MAX (source_size, result_size);
+   buffer = (unsigned char*)alloca (buffer_size);
+-  memset (buffer, 0, buffer_size);
++  memset (buffer, 0x20, buffer_size);
+ 
+   /* Now write source to the buffer.  */
+   gfc_target_encode_expr (source, buffer, buffer_size);
+diff --git a/gcc/testsuite/gfortran.dg/c_ptr_tests_16.f90 b/gcc/testsuite/gfortran.dg/c_ptr_tests_16.f90
+index 8855d62..118ee37 100644
+--- a/gcc/testsuite/gfortran.dg/c_ptr_tests_16.f90
++++ b/gcc/testsuite/gfortran.dg/c_ptr_tests_16.f90
+@@ -13,7 +13,8 @@ program test
+   print '(z8)', a
+   if (     int(z'45434241') /= a  &
+      .and. int(z'41424345') /= a  &
+-     .and. int(z'4142434500000000',kind=8) /= a) &
++     .and. int(z'4142434520202020',kind=8) /= a &
++     .and. int(z'2020202045434241',kind=8) /= a ) &
+     call i_do_not_exist()
+ end program test
+ 
+-- 
+1.9.1
+

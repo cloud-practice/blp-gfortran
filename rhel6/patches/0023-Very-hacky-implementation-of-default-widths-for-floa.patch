@@ -1,0 +1,175 @@
+From dc7722d2b77f440d30e1e7017c38e11dc11e8313 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Fri, 2 Oct 2015 18:42:59 +0100
+Subject: [PATCH 23/47] Very hacky implementation of default widths for floats.
+ Does not take account of variable type (i.e. no COMPLEX).
+
+---
+ gcc/fortran/io.c               | 12 +++++++++++
+ libgfortran/io/format.c        | 14 +++++++++----
+ libgfortran/io/write_float.def | 45 +++++++++++++++++++++++++++++++-----------
+ 3 files changed, 55 insertions(+), 16 deletions(-)
+
+diff --git a/gcc/fortran/io.c b/gcc/fortran/io.c
+index 45ec61f..8e1438d 100644
+--- a/gcc/fortran/io.c
++++ b/gcc/fortran/io.c
+@@ -852,6 +852,13 @@ data_desc:
+ 
+       if (u != FMT_POSINT)
+ 	{
++	  if (gfc_option.flag_oracle_support)
++	    {
++	      /* Assume a default width based on the variable size.  */
++	      saved_token = u;
++	      break;
++	    }
++
+ 	  format_locus.nextc += format_string_pos;
+ 	  gfc_error ("Positive width required in format "
+ 			 "specifier %s at %L", token_to_string (t),
+@@ -926,6 +933,11 @@ data_desc:
+ 	goto fail;
+       if (t != FMT_ZERO && t != FMT_POSINT)
+ 	{
++	  if (gfc_option.flag_oracle_support)
++	    {
++	      saved_token = t;
++	      break;
++	    }
+ 	  error = nonneg_required;
+ 	  goto syntax;
+ 	}
+diff --git a/libgfortran/io/format.c b/libgfortran/io/format.c
+index c5c4a65..b723fdc 100644
+--- a/libgfortran/io/format.c
++++ b/libgfortran/io/format.c
+@@ -919,14 +919,20 @@ parse_format_list (st_parameter_dt *dtp, bool *seen_dd)
+ 	{
+ 	  if (u != FMT_POSINT && u != FMT_ZERO)
+ 	    {
+-	      fmt->error = nonneg_required;
+-	      goto finished;
++	      tail->u.real.w = DEFAULT_WIDTH;
++	      tail->u.real.d = 0;
++	      tail->u.real.e = -1;
++	      fmt->saved_token = u;
++	      break;
+ 	    }
+ 	}
+       else if (u != FMT_POSINT)
+ 	{
+-	  fmt->error = posint_required;
+-	  goto finished;
++	  tail->u.real.w = DEFAULT_WIDTH;
++	  tail->u.real.d = 0;
++	  tail->u.real.e = -1;
++	  fmt->saved_token = u;
++	  break;
+ 	}
+ 
+       tail->u.real.w = fmt->value;
+diff --git a/libgfortran/io/write_float.def b/libgfortran/io/write_float.def
+index acfa125..0c59fdc 100644
+--- a/libgfortran/io/write_float.def
++++ b/libgfortran/io/write_float.def
+@@ -112,7 +112,7 @@ determine_precision (st_parameter_dt * dtp, const fnode * f, int len)
+ 
+ static try
+ output_float (st_parameter_dt *dtp, const fnode *f, char *buffer, size_t size,
+-	      int nprinted, int precision, int sign_bit, bool zero_flag)
++	      int nprinted, int precision, int sign_bit, bool zero_flag, int width)
+ {
+   char *out;
+   char *digits;
+@@ -131,8 +131,8 @@ output_float (st_parameter_dt *dtp, const fnode *f, char *buffer, size_t size,
+   sign_t sign;
+ 
+   ft = f->format;
+-  w = f->u.real.w;
+-  d = f->u.real.d;
++  w = width;
++  d = precision;
+   p = dtp->u.p.scale_factor;
+ 
+   rchar = '5';
+@@ -981,7 +981,7 @@ __qmath_(quadmath_snprintf) (buffer, size, "%+-#.*Qf", \
+ static void \
+ output_float_FMT_G_ ## x (st_parameter_dt *dtp, const fnode *f, \
+ 		      GFC_REAL_ ## x m, char *buffer, size_t size, \
+-			  int sign_bit, bool zero_flag, int comp_d) \
++			  int sign_bit, bool zero_flag, int comp_d, int width) \
+ { \
+   int e = f->u.real.e;\
+   int d = f->u.real.d;\
+@@ -1078,7 +1078,7 @@ output_float_FMT_G_ ## x (st_parameter_dt *dtp, const fnode *f, \
+ \
+  finish:\
+     result = output_float (dtp, &newf, buffer, size, nprinted, precision,\
+-			   sign_bit, zero_flag);\
++			   sign_bit, zero_flag, width);\
+   dtp->u.p.scale_factor = save_scale_factor;\
+ \
+ \
+@@ -1217,7 +1217,7 @@ determine_en_precision (st_parameter_dt *dtp, const fnode *f,
+ 	zero_flag = (tmp == 0.0);\
+ 	if (f->format == FMT_G)\
+ 	  output_float_FMT_G_ ## x (dtp, f, tmp, buffer, size, sign_bit, \
+-				    zero_flag, comp_d);\
++				    zero_flag, comp_d, width);\
+ 	else\
+ 	  {\
+ 	    if (f->format == FMT_F)\
+@@ -1225,7 +1225,7 @@ determine_en_precision (st_parameter_dt *dtp, const fnode *f,
+ 	    else\
+ 	      nprinted = DTOA(y,precision,tmp);					\
+ 	    output_float (dtp, f, buffer, size, nprinted, precision,\
+-			  sign_bit, zero_flag);\
++			  sign_bit, zero_flag, width);\
+ 	  }\
+ }\
+ 
+@@ -1237,14 +1237,35 @@ write_float (st_parameter_dt *dtp, const fnode *f, const char *source, \
+ {
+   int sign_bit, nprinted;
+   int precision;  /* Precision for snprintf call.  */
++  int width;
+   bool zero_flag;
+ 
+-  if (f->format != FMT_EN)
+-    precision = determine_precision (dtp, f, len);
+-  else
+-    precision = determine_en_precision (dtp, f, source, len);
++  precision = 0;
++  width = 0;
++
++  if(f->u.real.w == -1)
++    { // Set defaults based on size (and type also, but that's TODO)
++      switch(len) {
++            case 4: width = 15; precision = 7; break;
++	    case 8: width = 25; precision = 16; break;
++	    case 16: width = 42; precision = 33; break;
++      }
++    }
++
++  if (width == 0)
++    {
++       width = f->u.real.w;
++    }
++
++  if (precision == 0)
++    {
++      if (f->format != FMT_EN)
++        precision = determine_precision (dtp, f, len);
++      else
++        precision = determine_en_precision (dtp, f, source, len);
++    }
+ 
+-  /* 4932 is the maximum exponent of long double and quad precision, 3
++   /* 4932 is the maximum exponent of long double and quad precision, 3
+      extra characters for the sign, the decimal point, and the
+      trailing null, and finally some extra digits depending on the
+      requested precision.  */
+-- 
+1.9.1
+

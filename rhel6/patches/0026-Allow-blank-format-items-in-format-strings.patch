@@ -1,0 +1,28 @@
+From cae3f47a6934196fc06bc9c318ebc2686de1faf7 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Mon, 5 Oct 2015 14:20:05 +0100
+Subject: [PATCH 26/47] Allow blank format items in format strings
+
+---
+ gcc/fortran/io.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/gcc/fortran/io.c b/gcc/fortran/io.c
+index 8e1438d..bd5907d 100644
+--- a/gcc/fortran/io.c
++++ b/gcc/fortran/io.c
+@@ -709,6 +709,11 @@ format_item_1:
+       error = unexpected_end;
+       goto syntax;
+ 
++    case FMT_RPAREN:
++      /* Oracle allows a blank format item. If this flag is off,
++	 fall through to default. */
++      if (gfc_option.flag_oracle_support) goto finished;
++
+     default:
+       error = unexpected_element;
+       goto syntax;
+-- 
+1.9.1
+
