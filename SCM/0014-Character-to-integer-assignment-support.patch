@@ -1,0 +1,175 @@
+From ab593f8ec644a3e5e463117f490e2023d65d2215 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Fri, 18 Sep 2015 15:00:37 +0100
+Subject: [PATCH 14/47] Character-to-integer assignment support
+
+---
+ gcc/fortran/arith.c     | 44 +++++++++++++++++++++++++++++++++++++++++++-
+ gcc/fortran/arith.h     |  1 +
+ gcc/fortran/check.c     |  4 ++++
+ gcc/fortran/intrinsic.c | 20 ++++++++++++++++++++
+ gcc/fortran/simplify.c  | 11 ++++++++++-
+ 5 files changed, 78 insertions(+), 2 deletions(-)
+
+diff --git a/gcc/fortran/arith.c b/gcc/fortran/arith.c
+index 83a9e3c..87309f2 100644
+--- a/gcc/fortran/arith.c
++++ b/gcc/fortran/arith.c
+@@ -2256,7 +2256,7 @@ gfc_int2log (gfc_expr *src, int kind)
+ }
+ 
+ 
+-/* Helper function to set the representation in a Hollerith conversion.  
++/* Helper function to set the representation in a Hollerith conversion.
+    This assumes that the ts.type and ts.kind of the result have already
+    been set.  */
+ 
+@@ -2286,6 +2286,35 @@ hollerith2representation (gfc_expr *result, gfc_expr *src)
+ }
+ 
+ 
++/* Helper function to set the representation in a character conversion.
++   This assumes that the ts.type and ts.kind of the result have already
++   been set.  */
++
++static void
++character2representation (gfc_expr *result, gfc_expr *src)
++{
++  int src_len, result_len;
++
++  src_len = src->value.character.length;
++  result_len = gfc_target_expr_size (result);
++
++  if (src_len > result_len)
++    {
++      gfc_warning ("The character constant at %L is too long to convert to %s",
++		   &src->where, gfc_typename(&result->ts));
++    }
++
++  result->representation.string = XCNEWVEC (char, result_len + 1);
++  memcpy (result->representation.string, src->value.character.string,
++	  MIN (result_len, src_len));
++
++  if (src_len < result_len)
++    memset (&result->representation.string[src_len], ' ', result_len - src_len);
++
++  result->representation.string[result_len] = '\0'; /* For debugger  */
++  result->representation.length = result_len;
++}
++
+ /* Convert Hollerith to integer. The constant will be padded or truncated.  */
+ 
+ gfc_expr *
+@@ -2301,6 +2330,19 @@ gfc_hollerith2int (gfc_expr *src, int kind)
+   return result;
+ }
+ 
++/* Convert character to integer. The constant will be padded or truncated. */
++
++gfc_expr *
++gfc_character2int (gfc_expr *src, int kind)
++{
++  gfc_expr *result;
++  result = gfc_get_constant_expr (BT_INTEGER, kind, &src->where);
++
++  character2representation (result, src);
++  gfc_interpret_integer (kind, (unsigned char *) result->representation.string,
++			 result->representation.length, result->value.integer);
++  return result;
++}
+ 
+ /* Convert Hollerith to real. The constant will be padded or truncated.  */
+ 
+diff --git a/gcc/fortran/arith.h b/gcc/fortran/arith.h
+index 332d4fb..748e04a 100644
+--- a/gcc/fortran/arith.h
++++ b/gcc/fortran/arith.h
+@@ -82,6 +82,7 @@ gfc_expr *gfc_hollerith2real (gfc_expr *, int);
+ gfc_expr *gfc_hollerith2complex (gfc_expr *, int);
+ gfc_expr *gfc_hollerith2character (gfc_expr *, int);
+ gfc_expr *gfc_hollerith2logical (gfc_expr *, int);
++gfc_expr *gfc_character2int (gfc_expr *, int);
+ 
+ #endif /* GFC_ARITH_H  */
+ 
+diff --git a/gcc/fortran/check.c b/gcc/fortran/check.c
+index c9520f6..7956a51 100644
+--- a/gcc/fortran/check.c
++++ b/gcc/fortran/check.c
+@@ -1969,9 +1969,13 @@ gfc_check_index (gfc_expr *string, gfc_expr *substring, gfc_expr *back,
+ }
+ 
+ 
++/* This is the check function for the argument to the INT intrinsic */
+ gfc_try
+ gfc_check_int (gfc_expr *x, gfc_expr *kind)
+ {
++  if (gfc_option.flag_oracle_support && x->ts.type == BT_CHARACTER)
++    return SUCCESS;
++
+   if (numeric_check (x, 0) == FAILURE)
+     return FAILURE;
+ 
+diff --git a/gcc/fortran/intrinsic.c b/gcc/fortran/intrinsic.c
+index be0e822..00da01c 100644
+--- a/gcc/fortran/intrinsic.c
++++ b/gcc/fortran/intrinsic.c
+@@ -3346,6 +3346,17 @@ add_conversions (void)
+ 	  add_conv (BT_LOGICAL, gfc_logical_kinds[j].kind,
+ 		    BT_INTEGER, gfc_integer_kinds[i].kind, GFC_STD_LEGACY);
+ 	}
++
++  /* Oracle allows character values to be converted to integers,
++     similar to Hollerith-Integer conversion - the first characters will
++     be turned into ascii values. */
++  if (gfc_option.flag_oracle_support)
++    {
++      /* Character-Integer conversions.  */
++      for (i = 0; gfc_integer_kinds[i].kind != 0; i++)
++	add_conv (BT_CHARACTER, gfc_default_character_kind,
++		  BT_INTEGER, gfc_integer_kinds[i].kind, GFC_STD_LEGACY);
++    }
+ }
+ 
+ 
+@@ -4373,6 +4384,15 @@ gfc_convert_type_warn (gfc_expr *expr, gfc_typespec *ts, int eflag, int wflag)
+ 			     gfc_typename (&from_ts), gfc_typename (ts),
+ 			     &expr->where);
+ 	}
++      else if (gfc_option.flag_oracle_support && from_ts.type == BT_CHARACTER
++	       && ts->type == BT_INTEGER)
++	{
++	  if (gfc_option.warn_conversion_extra
++	      || gfc_option.gfc_warn_conversion)
++	    gfc_warning_now ("Conversion from %s to %s at %L",
++			     gfc_typename (&from_ts), gfc_typename (ts),
++			     &expr->where);
++	}
+       else
+         gcc_unreachable ();
+     }
+diff --git a/gcc/fortran/simplify.c b/gcc/fortran/simplify.c
+index 65c65a3..4b600c1 100644
+--- a/gcc/fortran/simplify.c
++++ b/gcc/fortran/simplify.c
+@@ -6577,7 +6577,16 @@ gfc_convert_constant (gfc_expr *e, bt type, int kind)
+ 	  goto oops;
+ 	}
+       break;
+-
++    case BT_CHARACTER:
++      switch(type)
++	{
++	case BT_INTEGER:
++	  f = gfc_character2int;
++	  break;
++	default:
++	  goto oops;
++	}
++      break;
+     default:
+     oops:
+       gfc_internal_error ("gfc_convert_constant(): Unexpected type");
+-- 
+1.9.1
+

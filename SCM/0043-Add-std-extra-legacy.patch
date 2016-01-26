@@ -1,0 +1,58 @@
+From 722baa758b486e79313ca2f2720e08f258bc4ebb Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Fri, 11 Dec 2015 17:04:09 +0000
+Subject: [PATCH 43/47] Add -std=extra-legacy
+
+---
+ gcc/fortran/lang.opt      | 4 ++++
+ gcc/fortran/libgfortran.h | 1 +
+ gcc/fortran/options.c     | 6 ++++++
+ 3 files changed, 11 insertions(+)
+
+diff --git a/gcc/fortran/lang.opt b/gcc/fortran/lang.opt
+index 99af088..f9cb767 100644
+--- a/gcc/fortran/lang.opt
++++ b/gcc/fortran/lang.opt
+@@ -673,6 +673,10 @@ std=legacy
+ Fortran
+ Accept extensions to support legacy code
+ 
++std=extra-legacy
++Fortran
++Accept even more legacy extensions, including things disallowed in f90
++
+ undef
+ Fortran
+ ; Documented in C
+diff --git a/gcc/fortran/libgfortran.h b/gcc/fortran/libgfortran.h
+index 30b3b7b..8bd88b2 100644
+--- a/gcc/fortran/libgfortran.h
++++ b/gcc/fortran/libgfortran.h
+@@ -22,6 +22,7 @@ along with GCC; see the file COPYING3.  If not see
+    Note that no features were obsoleted nor deleted in F2003.
+    Please remember to keep those definitions in sync with
+    gfortran.texi.  */
++#define GFC_STD_EXTRA_LEGACY	(1<<10)	/* Even more backward compatibility.  */
+ #define GFC_STD_F2008_TS	(1<<9)	/* POST-F2008 technical reports.  */
+ #define GFC_STD_F2008_OBS	(1<<8)	/* Obsolescent in F2008.  */
+ #define GFC_STD_F2008		(1<<7)	/* New in F2008.  */
+diff --git a/gcc/fortran/options.c b/gcc/fortran/options.c
+index 58752b5..e1406fa 100644
+--- a/gcc/fortran/options.c
++++ b/gcc/fortran/options.c
+@@ -1050,6 +1050,12 @@ gfc_handle_option (size_t scode, const char *arg, int value,
+       gfc_option.warn_std = 0;
+       break;
+ 
++    case OPT_std_extra_legacy:
++      set_default_std_flags ();
++      gfc_option.warn_std = 0;
++      gfc_option.allow_std |= GFC_STD_EXTRA_LEGACY;
++      break;
++
+     case OPT_Wintrinsics_std:
+       gfc_option.warn_intrinsics_std = value;
+       break;
+-- 
+1.9.1
+

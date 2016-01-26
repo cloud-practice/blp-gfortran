@@ -1,0 +1,40 @@
+From e74c4e847fb170e228dcc560609a56a5e5dd91ed Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Tue, 22 Sep 2015 18:01:14 +0100
+Subject: [PATCH 16/47] Documentation for the AUTOMATIC statement
+
+---
+ gcc/fortran/gfortran.texi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/gcc/fortran/gfortran.texi b/gcc/fortran/gfortran.texi
+index 4f9008d..a27903f 100644
+--- a/gcc/fortran/gfortran.texi
++++ b/gcc/fortran/gfortran.texi
+@@ -1358,6 +1358,7 @@ without warning.
+ * CONVERT specifier::
+ * OpenMP::
+ * Argument list functions::
++* AUTOMATIC statement::
+ @end menu
+ 
+ @node Old-style kind specifications
+@@ -1965,6 +1966,15 @@ For details refer to the g77 manual
+ Also, @code{c_by_val.f} and its partner @code{c_by_val.c} of the
+ GNU Fortran testsuite are worth a look.
+ 
++@node AUTOMATIC statement
++@subsection AUTOMATIC statement
++@cindex AUTOMATIC statement
++
++AUTOMATIC is the opposite to the standard SAVE statement. While SAVE forces
++variables to be placed in non-stack memory where it won't be overwritten,
++AUTOMATIC forces all variable declared with it to be on the stack.
++
++AUTOMATIC overrides -fno-automatic.
+ 
+ @node Extensions not implemented in GNU Fortran
+ @section Extensions not implemented in GNU Fortran
+-- 
+1.9.1
+

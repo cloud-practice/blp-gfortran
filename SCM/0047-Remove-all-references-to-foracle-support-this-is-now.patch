@@ -1,0 +1,410 @@
+From 16b488e22b1117a365079392380129311e6c6e18 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Tue, 22 Dec 2015 12:02:42 +0000
+Subject: [PATCH 47/47] Remove all references to -foracle-support; this is now
+ -std=extra-legacy
+
+---
+ gcc/fortran/check.c                                    |  6 +++---
+ gcc/fortran/decl.c                                     |  4 ++--
+ gcc/fortran/expr.c                                     |  2 +-
+ gcc/fortran/gfortran.h                                 |  2 --
+ gcc/fortran/intrinsic.c                                |  4 ++--
+ gcc/fortran/io.c                                       |  8 ++++----
+ gcc/fortran/lang.opt                                   |  8 --------
+ gcc/fortran/match.c                                    |  2 +-
+ gcc/fortran/options.c                                  | 10 +---------
+ gcc/fortran/parse.c                                    |  2 +-
+ gcc/fortran/primary.c                                  |  4 ++--
+ gcc/fortran/resolve.c                                  | 18 +++++++++---------
+ gcc/fortran/scanner.c                                  |  2 +-
+ gcc/fortran/simplify.c                                 |  4 ++--
+ .../gfortran.dg/hollerith-character-comparison.f90     |  2 +-
+ gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90 |  2 +-
+ 16 files changed, 31 insertions(+), 49 deletions(-)
+
+diff --git a/gcc/fortran/check.c b/gcc/fortran/check.c
+index dfb905a..a683216 100644
+--- a/gcc/fortran/check.c
++++ b/gcc/fortran/check.c
+@@ -871,7 +871,7 @@ gfc_check_a_p (gfc_expr *a, gfc_expr *p)
+   if (int_or_real_check (a, 0) == FAILURE)
+     return FAILURE;
+ 
+-  if (gfc_option.flag_oracle_support)
++  if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+     promote_types(a, p);
+ 
+   if (a->ts.type != p->ts.type)
+@@ -1918,7 +1918,7 @@ gfc_check_ichar_iachar (gfc_expr *c, gfc_expr *kind)
+   else
+     return SUCCESS;
+ 
+-  if (i != 1 && !gfc_option.flag_oracle_support)
++  if (i != 1 && !(gfc_option.allow_std & GFC_STD_EXTRA_LEGACY))
+     {
+       gfc_error ("Argument of %s at %L must be of length one",
+ 		 gfc_current_intrinsic, &c->where);
+@@ -1994,7 +1994,7 @@ gfc_check_index (gfc_expr *string, gfc_expr *substring, gfc_expr *back,
+ gfc_try
+ gfc_check_int (gfc_expr *x, gfc_expr *kind)
+ {
+-  if (gfc_option.flag_oracle_support && x->ts.type == BT_CHARACTER)
++  if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY && x->ts.type == BT_CHARACTER)
+     return SUCCESS;
+ 
+   if (numeric_check (x, 0) == FAILURE)
+diff --git a/gcc/fortran/decl.c b/gcc/fortran/decl.c
+index d0c35a1..e4ea22b 100644
+--- a/gcc/fortran/decl.c
++++ b/gcc/fortran/decl.c
+@@ -1878,7 +1878,7 @@ variable_decl (int elem)
+   cl_match = MATCH_NO;
+ 
+   /* Check for a character length clause before an array clause */
+-  if (gfc_option.flag_oracle_support)
++  if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+     {
+       if (current_ts.type == BT_CHARACTER)
+ 	{
+@@ -2051,7 +2051,7 @@ variable_decl (int elem)
+ 
+       else if (gfc_current_state () == COMP_DERIVED)
+ 	{
+-	  if(!gfc_option.flag_oracle_support_experimental)
++	  if(!(gfc_option.allow_std & GFC_STD_EXTRA_LEGACY))
+ 	    {
+ 	      gfc_error ("Invalid old style initialization for derived type "
+ 			 "component at %C");
+diff --git a/gcc/fortran/expr.c b/gcc/fortran/expr.c
+index afa5bda..6e17813 100644
+--- a/gcc/fortran/expr.c
++++ b/gcc/fortran/expr.c
+@@ -3258,7 +3258,7 @@ gfc_check_assign (gfc_expr *lvalue, gfc_expr *rvalue, int conform)
+ 	  || rvalue->ts.type == BT_HOLLERITH)
+ 	return SUCCESS;
+ 
+-      if (gfc_option.flag_oracle_support && gfc_numeric_ts (&lvalue->ts) && rvalue->ts.type == BT_CHARACTER)
++      if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY && gfc_numeric_ts (&lvalue->ts) && rvalue->ts.type == BT_CHARACTER)
+ 	return SUCCESS;
+ 
+       if (lvalue->ts.type == BT_LOGICAL && rvalue->ts.type == BT_LOGICAL)
+diff --git a/gcc/fortran/gfortran.h b/gcc/fortran/gfortran.h
+index 29fdf57..9c6f263 100644
+--- a/gcc/fortran/gfortran.h
++++ b/gcc/fortran/gfortran.h
+@@ -2308,8 +2308,6 @@ typedef struct
+   int fpe;
+   int rtcheck;
+   gfc_fcoarray coarray;
+-  int flag_oracle_support;
+-  int flag_oracle_support_experimental;
+ 
+   int warn_std;
+   int allow_std;
+diff --git a/gcc/fortran/intrinsic.c b/gcc/fortran/intrinsic.c
+index 2640e6d..9ca9869 100644
+--- a/gcc/fortran/intrinsic.c
++++ b/gcc/fortran/intrinsic.c
+@@ -3350,7 +3350,7 @@ add_conversions (void)
+   /* Oracle allows character values to be converted to integers,
+      similar to Hollerith-Integer conversion - the first characters will
+      be turned into ascii values. */
+-  if (gfc_option.flag_oracle_support)
++  if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+     {
+       /* Character-Integer conversions.  */
+       for (i = 0; gfc_integer_kinds[i].kind != 0; i++)
+@@ -4394,7 +4394,7 @@ gfc_convert_type_warn (gfc_expr *expr, gfc_typespec *ts, int eflag, int wflag)
+ 			     gfc_typename (&from_ts), gfc_typename (ts),
+ 			     &expr->where);
+ 	}
+-      else if (gfc_option.flag_oracle_support && from_ts.type == BT_CHARACTER
++      else if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY && from_ts.type == BT_CHARACTER
+ 	       && ts->type == BT_INTEGER)
+ 	{
+ 	  if (gfc_option.warn_conversion_extra
+diff --git a/gcc/fortran/io.c b/gcc/fortran/io.c
+index bd5907d..0bfb20c 100644
+--- a/gcc/fortran/io.c
++++ b/gcc/fortran/io.c
+@@ -712,7 +712,7 @@ format_item_1:
+     case FMT_RPAREN:
+       /* Oracle allows a blank format item. If this flag is off,
+ 	 fall through to default. */
+-      if (gfc_option.flag_oracle_support) goto finished;
++      if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY) goto finished;
+ 
+     default:
+       error = unexpected_element;
+@@ -857,7 +857,7 @@ data_desc:
+ 
+       if (u != FMT_POSINT)
+ 	{
+-	  if (gfc_option.flag_oracle_support)
++	  if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+ 	    {
+ 	      /* Assume a default width based on the variable size.  */
+ 	      saved_token = u;
+@@ -938,7 +938,7 @@ data_desc:
+ 	goto fail;
+       if (t != FMT_ZERO && t != FMT_POSINT)
+ 	{
+-	  if (gfc_option.flag_oracle_support)
++	  if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+ 	    {
+ 	      saved_token = t;
+ 	      break;
+@@ -1012,7 +1012,7 @@ data_desc:
+ 	goto fail;
+       if (t != FMT_ZERO && t != FMT_POSINT)
+ 	{
+-	  if (gfc_option.flag_oracle_support)
++	  if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+ 	    {
+ 	      /* Assume the default width is expected here and continue lexing.  */
+ 	      value = 0; /* It doesn't matter what we set the value to here.  */
+diff --git a/gcc/fortran/lang.opt b/gcc/fortran/lang.opt
+index f9cb767..0a3a300 100644
+--- a/gcc/fortran/lang.opt
++++ b/gcc/fortran/lang.opt
+@@ -325,14 +325,6 @@ fallow-leading-underscore
+ Fortran Undocumented
+ ; For internal use only: allow the first character of symbol names to be an underscore
+ 
+-foracle-support
+-Fortran
+-; Supports some extra features also supported by the Oracle Fortran compiler.
+-
+-foracle-support-experimental
+-Fortran
+-; Experimental and untested support for features also supported by the Oracle Fortran compiler.
+-
+ fautomatic
+ Fortran
+ Do not treat local variables and COMMON blocks as if they were named in SAVE statements
+diff --git a/gcc/fortran/match.c b/gcc/fortran/match.c
+index 7e55fbd..c1e4078 100644
+--- a/gcc/fortran/match.c
++++ b/gcc/fortran/match.c
+@@ -1628,7 +1628,7 @@ got_match:
+   p->next->loc = gfc_current_locus;
+ 
+ 
+-  if (gfc_option.flag_oracle_support && expr->ts.type != BT_LOGICAL)
++  if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY && expr->ts.type != BT_LOGICAL)
+     {
+       p->expr1 = gfc_ne (expr, gfc_get_int_expr (1, &gfc_current_locus, 0), INTRINSIC_NE);
+       gfc_warning_now ("The type of condition in this IF statement isn't LOGICAL; it will be true if it evaluates to nonzero.", expr->ts.type);
+diff --git a/gcc/fortran/options.c b/gcc/fortran/options.c
+index e1406fa..80161c5 100644
+--- a/gcc/fortran/options.c
++++ b/gcc/fortran/options.c
+@@ -160,8 +160,6 @@ gfc_init_options (unsigned int decoded_options_count,
+   gfc_option.flag_realloc_lhs = -1;
+   gfc_option.flag_aggressive_function_elimination = 0;
+   gfc_option.flag_frontend_optimize = -1;
+-  gfc_option.flag_oracle_support = 0;
+-  gfc_option.flag_oracle_support_experimental = 0;
+ 
+   gfc_option.fpe = 0;
+   gfc_option.rtcheck = 0;
+@@ -1056,6 +1054,7 @@ gfc_handle_option (size_t scode, const char *arg, int value,
+       gfc_option.allow_std |= GFC_STD_EXTRA_LEGACY;
+       break;
+ 
++
+     case OPT_Wintrinsics_std:
+       gfc_option.warn_intrinsics_std = value;
+       break;
+@@ -1128,13 +1127,6 @@ gfc_handle_option (size_t scode, const char *arg, int value,
+       gfc_handle_coarray_option (arg);
+       break;
+ 
+-    case OPT_foracle_support:
+-      gfc_option.flag_oracle_support = value;
+-      break;
+-
+-    case OPT_foracle_support_experimental:
+-      gfc_option.flag_oracle_support_experimental = value;
+-      break;
+     }
+ 
+   Fortran_handle_option_auto (&global_options, &global_options_set, 
+diff --git a/gcc/fortran/parse.c b/gcc/fortran/parse.c
+index a33934d..e164a8d 100644
+--- a/gcc/fortran/parse.c
++++ b/gcc/fortran/parse.c
+@@ -2952,7 +2952,7 @@ parse_if_block (void)
+ 
+   d->expr1 = top->expr1;
+ 
+-  if (gfc_option.flag_oracle_support && top->expr1->ts.type != BT_LOGICAL)
++  if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY && top->expr1->ts.type != BT_LOGICAL)
+     {
+       d->expr1 = gfc_ne (top->expr1, gfc_get_int_expr (1, &gfc_current_locus, 0), INTRINSIC_NE);
+       gfc_warning_now ("The type of condition in this IF statement isn't LOGICAL; it will be true if it evaluates to nonzero.");
+diff --git a/gcc/fortran/primary.c b/gcc/fortran/primary.c
+index 3717d40..fa32076 100644
+--- a/gcc/fortran/primary.c
++++ b/gcc/fortran/primary.c
+@@ -1815,7 +1815,7 @@ match
+ gfc_match_structure_access_operator ()
+ {
+   match m;
+-  if (gfc_option.flag_oracle_support)
++  if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+     {
+       m = gfc_match_char('.');
+       if (m == MATCH_YES)
+@@ -1827,7 +1827,7 @@ gfc_match_structure_access_operator ()
+ int
+ gfc_peek_structure_access_operator ()
+ {
+-  return gfc_peek_ascii_char () == '%' || (gfc_option.flag_oracle_support && gfc_peek_ascii_char () == '.');
++  return gfc_peek_ascii_char () == '%' || (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY && gfc_peek_ascii_char () == '.');
+ }
+ 
+ /* Match any additional specifications associated with the current
+diff --git a/gcc/fortran/resolve.c b/gcc/fortran/resolve.c
+index 1593f7a..4fa7cb5 100644
+--- a/gcc/fortran/resolve.c
++++ b/gcc/fortran/resolve.c
+@@ -925,7 +925,7 @@ resolve_common_vars (gfc_symbol *sym, bool named_common)
+ 
+       if (!(csym->ts.u.derived->attr.sequence
+ 	    || csym->ts.u.derived->attr.is_bind_c)) {
+-	if (gfc_option.flag_oracle_support)
++	if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+ 	  {
+ 	    /* Assume sequence. */
+ 	    csym->ts.u.derived->attr.sequence = 1;
+@@ -4025,7 +4025,7 @@ resolve_operator (gfc_expr *e)
+     case INTRINSIC_OR:
+     case INTRINSIC_EQV:
+     case INTRINSIC_NEQV:
+-      if (gfc_option.flag_oracle_support)
++      if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+ 	{
+ 	  convert_integer_to_logical(op1);
+ 	  convert_integer_to_logical(op2);
+@@ -4048,7 +4048,7 @@ resolve_operator (gfc_expr *e)
+       goto bad_op;
+ 
+     case INTRINSIC_NOT:
+-      if (gfc_option.flag_oracle_support)
++      if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+ 	{
+ 	  convert_integer_to_logical(op1);
+ 	}
+@@ -4084,14 +4084,14 @@ resolve_operator (gfc_expr *e)
+     case INTRINSIC_NE:
+     case INTRINSIC_NE_OS:
+ 
+-      if (gfc_option.flag_oracle_support)
++      if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+ 	{
+ 	  convert_logical_to_integer(op1);
+ 	  convert_logical_to_integer(op2);
+ 	}
+       /* If you're comparing hollerith contants to character expresisons, convert the hollerith
+ 	 constant */
+-      if (gfc_option.flag_oracle_support && is_character_based(op1->ts.type) && is_character_based(op2->ts.type))
++      if (gfc_option.allow_std & GFC_STD_EXTRA_LEGACY && is_character_based(op1->ts.type) && is_character_based(op2->ts.type))
+ 	{
+ 	  gfc_typespec ts;
+ 	  ts.type = BT_CHARACTER;
+@@ -4113,7 +4113,7 @@ resolve_operator (gfc_expr *e)
+ 	}
+ 
+       /* Numeric to hollerith comparisons */
+-      if(gfc_option.flag_oracle_support && gfc_numeric_ts(&op1->ts) && (op2->ts.type == BT_HOLLERITH || op2->ts.type == BT_CHARACTER))
++      if(gfc_option.allow_std & GFC_STD_EXTRA_LEGACY && gfc_numeric_ts(&op1->ts) && (op2->ts.type == BT_HOLLERITH || op2->ts.type == BT_CHARACTER))
+ 	{
+ 	  gfc_warning("Promoting argument for comparison from character type to INTEGER at %L", &op2->where);
+ 	  gfc_typespec ts;
+@@ -4122,7 +4122,7 @@ resolve_operator (gfc_expr *e)
+ 	  gfc_convert_type_warn (op2, &ts, 2, 1);
+ 	}
+ 
+-      if(gfc_option.flag_oracle_support && gfc_numeric_ts(&op2->ts) && (op1->ts.type == BT_HOLLERITH || op1->ts.type == BT_CHARACTER))
++      if(gfc_option.allow_std & GFC_STD_EXTRA_LEGACY && gfc_numeric_ts(&op2->ts) && (op1->ts.type == BT_HOLLERITH || op1->ts.type == BT_CHARACTER))
+ 	{
+ 	  gfc_warning("Promoting argument for comparison from character type to INTEGER at %L", &op1->where);
+ 	  gfc_typespec ts;
+@@ -4966,7 +4966,7 @@ resolve_substring (gfc_ref *ref)
+       /* In legacy mode, allow non-integer string indexes by converting */
+       if (ref->u.ss.start->ts.type != BT_INTEGER &&
+ 	  gfc_numeric_ts (&ref->u.ss.start->ts) &&
+-	  gfc_option.flag_oracle_support)
++	  gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+ 	{
+ 	  gfc_typespec t;
+ 	  t.type = BT_INTEGER;
+@@ -5006,7 +5006,7 @@ resolve_substring (gfc_ref *ref)
+       /* Non-integer string index endings, as for start */
+       if (ref->u.ss.end->ts.type != BT_INTEGER &&
+ 	  gfc_numeric_ts (&ref->u.ss.end->ts) &&
+-	  gfc_option.flag_oracle_support)
++	  gfc_option.allow_std & GFC_STD_EXTRA_LEGACY)
+ 	{
+ 	  gfc_typespec t;
+ 	  t.type = BT_INTEGER;
+diff --git a/gcc/fortran/scanner.c b/gcc/fortran/scanner.c
+index adc28be..19ca61b 100644
+--- a/gcc/fortran/scanner.c
++++ b/gcc/fortran/scanner.c
+@@ -1583,7 +1583,7 @@ load_line (FILE *input, gfc_char_t **pbuf, int *pbuflen, const int *first_char)
+       *buffer++ = c;
+       i++;
+ 
+-      if (maxlen > 0 && gfc_option.flag_oracle_support && include_line (*pbuf, 1))
++      if (maxlen > 0 && gfc_option.allow_std & GFC_STD_EXTRA_LEGACY && include_line (*pbuf, 1))
+ 	{
+ 	  gfc_warning_now("An include line longer than 72 characters is nonstandard.");
+ 	  maxlen = 0;
+diff --git a/gcc/fortran/simplify.c b/gcc/fortran/simplify.c
+index 29e3345..ad7b3e1 100644
+--- a/gcc/fortran/simplify.c
++++ b/gcc/fortran/simplify.c
+@@ -2457,7 +2457,7 @@ gfc_simplify_iachar (gfc_expr *e, gfc_expr *kind)
+   if (e->expr_type != EXPR_CONSTANT)
+     return NULL;
+ 
+-  if (e->value.character.length != 1 && !gfc_option.flag_oracle_support)
++  if (e->value.character.length != 1 && !(gfc_option.allow_std & GFC_STD_EXTRA_LEGACY))
+     {
+       gfc_error ("Argument of IACHAR at %L must be of length one", &e->where);
+       return &gfc_bad_expr;
+@@ -2654,7 +2654,7 @@ gfc_simplify_ichar (gfc_expr *e, gfc_expr *kind)
+   if (e->expr_type != EXPR_CONSTANT)
+     return NULL;
+ 
+-  if (e->value.character.length != 1 && !gfc_option.flag_oracle_support)
++  if (e->value.character.length != 1 && !(gfc_option.allow_std & GFC_STD_EXTRA_LEGACY))
+     {
+       gfc_error ("Argument of ICHAR at %L must be of length one", &e->where);
+       return &gfc_bad_expr;
+diff --git a/gcc/testsuite/gfortran.dg/hollerith-character-comparison.f90 b/gcc/testsuite/gfortran.dg/hollerith-character-comparison.f90
+index 918f9b2..e618cbb 100644
+--- a/gcc/testsuite/gfortran.dg/hollerith-character-comparison.f90
++++ b/gcc/testsuite/gfortran.dg/hollerith-character-comparison.f90
+@@ -1,4 +1,4 @@
+-       ! { dg-options "-foracle-support" }
++       ! { dg-options "-std=extra-legacy" }
+ 
+       program convert
+       REAL*4 a
+diff --git a/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90 b/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90
+index ad917e1..f44c1f8 100644
+--- a/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90
++++ b/gcc/testsuite/gfortran.dg/hollerith-int-comparison.f90
+@@ -1,4 +1,4 @@
+-       ! { dg-options "-foracle-support" }
++       ! { dg-options "-std=extra-legacy" }
+ 
+       program convert
+       INTEGER*4 b
+-- 
+1.9.1
+

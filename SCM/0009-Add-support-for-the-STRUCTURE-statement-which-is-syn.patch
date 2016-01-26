@@ -1,0 +1,59 @@
+From 1267a29dd117a82243dea91d7b7586912da13ca3 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Mon, 21 Sep 2015 15:27:12 +0100
+Subject: [PATCH 09/47] Add support for the STRUCTURE statement, which is
+ syntactic sugar for TYPE.
+
+---
+ gcc/fortran/decl.c  | 15 ++++++++++++---
+ gcc/fortran/parse.c |  1 +
+ 2 files changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/gcc/fortran/decl.c b/gcc/fortran/decl.c
+index 13bd122..34e0f32 100644
+--- a/gcc/fortran/decl.c
++++ b/gcc/fortran/decl.c
+@@ -6151,8 +6151,13 @@ gfc_match_end (gfc_statement *st)
+   /* Verify that we've got the sort of end-block that we're expecting.  */
+   if (gfc_match (target) != MATCH_YES)
+     {
+-      gfc_error ("Expecting %s statement at %C", gfc_ascii_statement (*st));
+-      goto cleanup;
++      /* Also accept 'structure' to end types. This isn't an ideal way of doing
++         this check, but it keeps the delta small. */
++      if (*st != ST_END_TYPE || gfc_match (" structure") != MATCH_YES)
++	{
++	  gfc_error ("Expecting %s statement at %C", gfc_ascii_statement (*st));
++	  goto cleanup;
++	}
+     }
+ 
+   /* If we're at the end, make sure a block name wasn't required.  */
+@@ -7615,7 +7620,11 @@ gfc_match_derived_decl (void)
+ 
+   m = gfc_match (" %n%t", name);
+   if (m != MATCH_YES)
+-    return m;
++    {
++      m = gfc_match (" /%n/%t", name);
++      if (m != MATCH_YES)
++	return m;
++    }
+ 
+   /* Make sure the name is not the name of an intrinsic type.  */
+   if (gfc_is_intrinsic_typename (name))
+diff --git a/gcc/fortran/parse.c b/gcc/fortran/parse.c
+index 68c940e..2dba05a 100644
+--- a/gcc/fortran/parse.c
++++ b/gcc/fortran/parse.c
+@@ -497,6 +497,7 @@ decode_statement (void)
+       match ("sync all", gfc_match_sync_all, ST_SYNC_ALL);
+       match ("sync images", gfc_match_sync_images, ST_SYNC_IMAGES);
+       match ("sync memory", gfc_match_sync_memory, ST_SYNC_MEMORY);
++      match ("structure", gfc_match_derived_decl, ST_DERIVED_DECL);
+       break;
+ 
+     case 't':
+-- 
+1.9.1
+

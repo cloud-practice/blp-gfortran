@@ -1,0 +1,59 @@
+From 179009657946d83a81aedf75d714b0a29adad0eb Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Tue, 15 Sep 2015 17:01:17 +0100
+Subject: [PATCH 12/47] Add test for STRUCTURE and RECORD
+
+---
+ gcc/fortran/primary.c                         |  1 -
+ gcc/testsuite/gfortran.dg/vax_structure_1.f90 | 27 +++++++++++++++++++++++++++
+ 2 files changed, 27 insertions(+), 1 deletion(-)
+ create mode 100644 gcc/testsuite/gfortran.dg/vax_structure_1.f90
+
+diff --git a/gcc/fortran/primary.c b/gcc/fortran/primary.c
+index 7cb8a4d..6e4c271 100644
+--- a/gcc/fortran/primary.c
++++ b/gcc/fortran/primary.c
+@@ -3308,7 +3308,6 @@ match_variable (gfc_expr **result, int equiv_flag, int host_flag)
+ 	implicit_ns = gfc_current_ns;
+       else
+ 	implicit_ns = sym->ns;
+-	
+       if (gfc_peek_ascii_char () == '%'
+ 	  && sym->ts.type == BT_UNKNOWN
+ 	  && gfc_get_default_type (sym->name, implicit_ns)->type == BT_DERIVED)
+diff --git a/gcc/testsuite/gfortran.dg/vax_structure_1.f90 b/gcc/testsuite/gfortran.dg/vax_structure_1.f90
+new file mode 100644
+index 0000000..16fb9f9
+--- /dev/null
++++ b/gcc/testsuite/gfortran.dg/vax_structure_1.f90
+@@ -0,0 +1,27 @@
++! { dg-do compile }
++! { dg-options "-foracle-support" }
++! Tests the VAX STRUCTURE and RECORD statements.
++! These are syntactic sugar for TYPE statements.
++
++      program vax_structure_1
++      structure /stocklevel/
++         integer*2   A
++         integer*4   B
++         integer*4   CS(0:15)
++         byte        D(0:15)
++      end structure
++
++      record /stocklevel/ rec1, recs(100)
++      integer x
++      integer*2 y
++
++      rec1.A = 100
++      recs(100).CS(10)=1
++      x = 150
++      y = 150
++
++      print *, rec1.B.eq.100
++      print *, rec1.A.eq.x ! {dg-error "are INTEGER(2)/INTEGER(4)"}
++      print *, rec1.A.eq.y
++      print *, recs(100).CS(10)
++      end program
+-- 
+1.9.1
+

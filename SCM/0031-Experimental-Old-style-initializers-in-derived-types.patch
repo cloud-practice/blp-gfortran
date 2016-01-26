@@ -1,0 +1,116 @@
+From c365df13ef034aea77239f60ea380cb7843abfa5 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Thu, 5 Nov 2015 15:39:14 +0000
+Subject: [PATCH 31/47] Experimental: Old-style initializers in derived types
+
+This allows simple declarations in derived types and structures, such as:
+        LOGICAL*1      NIL      /0/
+Only single value expressions are allowed at the moment.
+---
+ gcc/fortran/decl.c     | 31 ++++++++++++++++++++++++++-----
+ gcc/fortran/gfortran.h |  1 +
+ gcc/fortran/lang.opt   |  4 ++++
+ gcc/fortran/options.c  |  5 +++++
+ 4 files changed, 36 insertions(+), 5 deletions(-)
+
+diff --git a/gcc/fortran/decl.c b/gcc/fortran/decl.c
+index bdde119..8a29c6d 100644
+--- a/gcc/fortran/decl.c
++++ b/gcc/fortran/decl.c
+@@ -2011,17 +2011,38 @@ variable_decl (int elem)
+       if (gfc_notify_std (GFC_STD_GNU, "Old-style "
+ 			  "initialization at %C") == FAILURE)
+ 	return MATCH_ERROR;
++
+       else if (gfc_current_state () == COMP_DERIVED)
+ 	{
+-	  gfc_error ("Invalid old style initialization for derived type "
+-		     "component at %C");
+-	  m = MATCH_ERROR;
+-	  goto cleanup;
++	  if(!gfc_option.flag_oracle_support_experimental)
++	    {
++	      gfc_error ("Invalid old style initialization for derived type "
++			 "component at %C");
++	      m = MATCH_ERROR;
++	      goto cleanup;
++	    }
++	  else
++	    {
++	      /* Attempt to match an old-style initializer which is a simple
++		 integer or character expression; this will not work with
++		 multiple values. */
++	      m = gfc_match_init_expr (&initializer);
++	      if (m == MATCH_ERROR)
++		goto cleanup;
++	      else if (m == MATCH_YES)
++		{
++		  m = gfc_match ("/");
++		  if (m != MATCH_YES)
++		    goto cleanup;
++		}
++	    }
+ 	}
++      else
++        return match_old_style_init (name);
+ 
+-      return match_old_style_init (name);
+     }
+ 
++
+   /* The double colon must be present in order to have initializers.
+      Otherwise the statement is ambiguous with an assignment statement.  */
+   if (colon_seen)
+diff --git a/gcc/fortran/gfortran.h b/gcc/fortran/gfortran.h
+index 4a3edb5..0eda100 100644
+--- a/gcc/fortran/gfortran.h
++++ b/gcc/fortran/gfortran.h
+@@ -2307,6 +2307,7 @@ typedef struct
+   int rtcheck;
+   gfc_fcoarray coarray;
+   int flag_oracle_support;
++  int flag_oracle_support_experimental;
+ 
+   int warn_std;
+   int allow_std;
+diff --git a/gcc/fortran/lang.opt b/gcc/fortran/lang.opt
+index f0434cd..99af088 100644
+--- a/gcc/fortran/lang.opt
++++ b/gcc/fortran/lang.opt
+@@ -329,6 +329,10 @@ foracle-support
+ Fortran
+ ; Supports some extra features also supported by the Oracle Fortran compiler.
+ 
++foracle-support-experimental
++Fortran
++; Experimental and untested support for features also supported by the Oracle Fortran compiler.
++
+ fautomatic
+ Fortran
+ Do not treat local variables and COMMON blocks as if they were named in SAVE statements
+diff --git a/gcc/fortran/options.c b/gcc/fortran/options.c
+index 3dc343f..58752b5 100644
+--- a/gcc/fortran/options.c
++++ b/gcc/fortran/options.c
+@@ -161,6 +161,7 @@ gfc_init_options (unsigned int decoded_options_count,
+   gfc_option.flag_aggressive_function_elimination = 0;
+   gfc_option.flag_frontend_optimize = -1;
+   gfc_option.flag_oracle_support = 0;
++  gfc_option.flag_oracle_support_experimental = 0;
+ 
+   gfc_option.fpe = 0;
+   gfc_option.rtcheck = 0;
+@@ -1124,6 +1125,10 @@ gfc_handle_option (size_t scode, const char *arg, int value,
+     case OPT_foracle_support:
+       gfc_option.flag_oracle_support = value;
+       break;
++
++    case OPT_foracle_support_experimental:
++      gfc_option.flag_oracle_support_experimental = value;
++      break;
+     }
+ 
+   Fortran_handle_option_auto (&global_options, &global_options_set, 
+-- 
+1.9.1
+

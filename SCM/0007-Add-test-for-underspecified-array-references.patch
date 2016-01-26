@@ -1,0 +1,32 @@
+From 142a074c4e3e20bd02024b7739f74d27c3df58df Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Mon, 7 Sep 2015 15:21:37 +0100
+Subject: [PATCH 07/47] Add test for underspecified array references
+
+---
+ gcc/testsuite/gfortran.dg/array_6.f90 | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+ create mode 100644 gcc/testsuite/gfortran.dg/array_6.f90
+
+diff --git a/gcc/testsuite/gfortran.dg/array_6.f90 b/gcc/testsuite/gfortran.dg/array_6.f90
+new file mode 100644
+index 0000000..5efcd1b
+--- /dev/null
++++ b/gcc/testsuite/gfortran.dg/array_6.f90
+@@ -0,0 +1,13 @@
++! { dg-do compile }
++!
++! Checks that under-specified arrays (referencing arrays with fewer
++! dimensions than the array spec) generates a warning.
++!
++! Contributed by Jim MacArthur <jim.macarthur@codethink.co.uk>
++!
++
++program under_specified_array
++    INTEGER chsbrd(8,8)
++    chsbrd(3,1) = 5
++    print *, chsbrd(3) ! { dg-warning "Using the lower bound for unspecified dimensions in array reference" }
++end program
+-- 
+1.9.1
+
