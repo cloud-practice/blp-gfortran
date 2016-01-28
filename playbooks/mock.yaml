@@ -28,7 +28,7 @@
   #              line='builder ALL=NOPASSWD:   ALL'
   #              state=present"
   - name : Ensure current user is in the mock group
-    command: usermod -a -G mock jenkins
+    command: sudo usermod -a -G mock jenkins
   - name: Run mock
     command: sudo mock -r ../mock-config-epel-7.cfg
 
