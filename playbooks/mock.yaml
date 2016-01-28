@@ -1,0 +1,34 @@
+---
+- hosts: localhost
+  connection: local
+  sudo: yes
+  vars:
+    gcc_version: 4.8
+    scl_name: blpdevtools
+  remote_user: jenkins
+  tasks:
+#  - name: install the 'Development tools' package group
+#    yum: name="@Development tools" state=present
+  - name: ensure rpmdevtools is installed
+    yum: name=rpmdevtools state=latest
+  - name: ensure yum-utils is installed
+    yum: name=yum-utils state=latest
+  #- name: Temporarily enable the EPEL repo to install mock
+  #  yum: name=yum-utils state=latest
+  - name: Install mock
+    yum: name=mock state=latest
+  - name: Install mock-scm
+    yum: name=mock-scm state=latest
+  #- name: disable EPEL
+  #  shell:
+  #- name: create a dedicated user for mock
+  #  user: name=builder groups=mock
+  #- name: ensure we can run commands with no password
+  #  lineinfile: "dest=/etc/sudoers
+  #              line='builder ALL=NOPASSWD:   ALL'
+  #              state=present"
+  - name : Ensure current user is in the mock group
+    command: usermod -a -G mock jenkins
+  - name: Run mock
+    command: sudo mock -r ../mock-config-epel-7.cfg
+
