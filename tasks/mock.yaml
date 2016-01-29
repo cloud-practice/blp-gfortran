@@ -35,4 +35,4 @@
   - name: Run mock build
     shell: mock -r /jenkins/workspace/gcc-rhel7/files/mock-config-epel-7.cfg --verbose
     async: 21600 # Wait up tp 6 hours
-    poll: 5
+    poll: 20
