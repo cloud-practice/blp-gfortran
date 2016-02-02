@@ -33,6 +33,6 @@
     #shell: usermod -a -G mock jenkins
     user: name=jenkins groups=mock append=yes
   - name: Run mock build
-    shell: mock -r /jenkins/workspace/gcc-rhel7/files/mock-config-epel-7.cfg --verbose
+    shell: "mock -r {{ ansible_env.PWD }}/../files/mock-config-epel-7.cfg --verbose"
     async: 21600 # Wait up tp 6 hours
     poll: 20
