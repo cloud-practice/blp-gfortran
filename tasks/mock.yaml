@@ -7,32 +7,19 @@
     scl_name: blpdevtools
   remote_user: jenkins
   tasks:
-#  - name: install the 'Development tools' package group
-#    yum: name="@Development tools" state=present
   - name: temporary debug info
     shell: pwd
   - name: ensure rpmdevtools is installed
     yum: name=rpmdevtools state=latest
   - name: ensure yum-utils is installed
     yum: name=yum-utils state=latest
-  #- name: Temporarily enable the EPEL repo to install mock
-  #  yum: name=yum-utils state=latest
   - name: Install mock
     yum: name=mock state=latest
   - name: Install mock-scm
     yum: name=mock-scm state=latest
-  #- name: disable EPEL
-  #  shell:
-  #- name: create a dedicated user for mock
-  #  user: name=builder groups=mock
-  #- name: ensure we can run commands with no password
-  #  lineinfile: "dest=/etc/sudoers
-  #              line='builder ALL=NOPASSWD:   ALL'
-  #              state=present"
   - name : Ensure current user is in the mock group
-    #shell: usermod -a -G mock jenkins
     user: name=jenkins groups=mock append=yes
   - name: Run mock build
     shell: "mock -r {{ ansible_env.PWD }}/../files/mock-config-epel-7.cfg --verbose"
-    async: 21600 # Wait up tp 6 hours
+    async: 36000 # Wait up to 10 hours
     poll: 20
