@@ -1,6 +1,6 @@
 ---
 gcc_version: 4.8.5
 scl_name: blpdevtools
-copr_repo_url: https://copr.fedorainfracloud.org/coprs/blpgccgfortran/gcc-gfortran-blp/repo/epel-7/blpgccgfortran-gcc-gfortran-blp-epel-7.repo
-copr_repo_gpg_key_url: https://copr-be.cloud.fedoraproject.org/results/blpgccgfortran/gcc-gfortran-blp/pubkey.gpg
+copr_repo_url: https://copr.fedorainfracloud.org/coprs/blpdevtools/gcc-gfortran/repo/epel-7/blpdevtools-gcc-gfortran-epel-7.repo
+copr_repo_gpg_key_url: https://copr-be.cloud.fedoraproject.org/results/blpdevtools/gcc-gfortran/pubkey.gpg
 legacy_fortran_tests: https://github.com/CodethinkLabs/legacy-fortran-tests
