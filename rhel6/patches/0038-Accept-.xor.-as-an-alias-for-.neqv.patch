@@ -1,0 +1,34 @@
+From 392728d42d73eea0ac23b93e6d9fcae6febf0a17 Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Tue, 17 Nov 2015 16:10:25 +0000
+Subject: [PATCH 38/46] Accept .xor. as an alias for .neqv.
+
+---
+ gcc/fortran/match.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/gcc/fortran/match.c b/gcc/fortran/match.c
+index 20c7a4a..c1e4078 100644
+--- a/gcc/fortran/match.c
++++ b/gcc/fortran/match.c
+@@ -921,6 +921,17 @@ gfc_match_intrinsic_op (gfc_intrinsic_op *result)
+ 	    }
+ 	  break;
+ 
++	case 'x':
++	  if (gfc_next_ascii_char () == 'o'
++	      && gfc_next_ascii_char () == 'r'
++	      && gfc_next_ascii_char () == '.')
++	    {
++	      /* Matched ".xor.".  */
++	      *result = INTRINSIC_NEQV;
++	      return MATCH_YES;
++	    }
++	  break;
++
+ 	default:
+ 	  break;
+ 	}
+-- 
+1.9.1
+
