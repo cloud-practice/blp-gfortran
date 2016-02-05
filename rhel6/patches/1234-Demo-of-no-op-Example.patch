@@ -1,0 +1,8 @@
+--- README.bak  2016-02-05 16:52:46.196000983 -0500
++++ README      2016-02-05 16:52:19.114000987 -0500
+@@ -1,3 +1,5 @@
++# This is a comment
++
+ This directory contains the GNU Compiler Collection (GCC).
+
+ The GNU Compiler Collection is free software.  See the files whose
