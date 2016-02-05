@@ -1,6 +1,7 @@
 %{?scl:%scl_package gcc}
 %{?scl:%global __strip strip}
 %{?scl:%global __objdump objdump}
+%global _default_patch_fuzz 2
 %global DATE 20140120
 %global SVNREV 206854
 %global gcc_version 4.8.2
@@ -279,6 +280,7 @@ Patch2002: doxygen-1.7.5-timestamp.patch
 Patch2003: doxygen-1.8.0-rh856725.patch
 
 # Define Bloomberg specific patches provided by Codethink
+Patch3000: 0000-decl.c-variable_decl-Reject-old-style-initialization.patch
 Patch3001: 0001-Allow-under-specified-array-references.patch
 Patch3002: 0002-Add-an-AUTOMATIC-statement-for-use-with-fno-automati.patch
 Patch3003: 0003-Add-tests-for-AUTOMATIC-keyword.patch
@@ -288,18 +290,18 @@ Patch3006: 0006-Correct-internal-fault-in-select_type_9.f90.patch
 Patch3007: 0007-Add-test-for-underspecified-array-references.patch
 Patch3008: 0008-Fix-warning-message-for-underspecified-arrays.patch
 Patch3009: 0009-Add-support-for-the-STRUCTURE-statement-which-is-syn.patch
-Patch3010: 0010-Allow-dot-.-operator-as-structure-member-operator.patch
-Patch3011: 0011-Allow-RECORD-statement-with-slash-quoted-names.patch
-Patch3012: 0012-Add-test-for-STRUCTURE-and-RECORD.patch
-Patch3013: 0013-Support-comparison-between-HOLLERITH-and-CHARACTER-p.patch
-Patch3014: 0014-Character-to-integer-assignment-support.patch
-Patch3015: 0015-Add-all-warning-messages-to-test-cases.patch
+Patch3010: 0010-Add-std-extra-legacy.patch
+Patch3011: 0011-Allow-dot-.-operator-as-structure-member-operator.patch
+Patch3012: 0012-Allow-RECORD-statement-with-slash-quoted-names.patch
+Patch3013: 0013-Add-test-for-STRUCTURE-and-RECORD.patch
+Patch3014: 0014-Support-comparison-between-HOLLERITH-and-CHARACTER-p.patch
+Patch3015: 0015-Character-to-integer-assignment-support.patch
 Patch3016: 0016-Documentation-for-the-AUTOMATIC-statement.patch
 Patch3017: 0017-Correction-to-gfc_add_automatic-fail-if-gfc_notify_s.patch
 Patch3018: 0018-Correct-error-in-character2representation.patch
 Patch3019: 0019-Pad-character-to-int-conversions-with-spaces-instead.patch
 Patch3020: 0020-Promote-int-to-real-when-using-check_a_p.patch
-Patch3021: 0021-First-stage-support-for-default-field-widths-in-form.patch
+Patch3021: 0021-Pad-character-to-int-conversions-with-spaces-instead.patch
 Patch3022: 0022-Fixup-57fd95a-Typo-in-DEFAULT_WIDTH.patch
 Patch3023: 0023-Very-hacky-implementation-of-default-widths-for-floa.patch
 Patch3024: 0024-Allow-more-than-one-character-as-argument-to-ICHAR.patch
@@ -309,7 +311,7 @@ Patch3027: 0027-Convert-integer-arguments-to-logicals-for-logical-op.patch
 Patch3028: 0028-Allow-mixed-string-length-and-array-specification-in.patch
 Patch3029: 0029-Allow-character-to-int-conversions-in-DATA-statement.patch
 Patch3030: 0030-Convert-logicals-to-ints-for-arithmetic-ops-and-vice.patch
-#Patch3031: 0031-Experimental-Old-style-initializers-in-derived-types.patch
+Patch3031: 0031-Experimental-Old-style-initializers-in-derived-types.patch
 Patch3032: 0032-Allow-per-variable-kind-specification.patch
 Patch3033: 0033-Add-support-for-integer-expressions-in-IF-statements.patch
 Patch3034: 0034-Allow-continued-include-lines.patch
@@ -321,11 +323,10 @@ Patch3039: 0039-Allow-calls-to-intrinsics-with-smaller-types-than-sp.patch
 Patch3040: 0040-Refine-the-promotion-of-smaller-ints-during-a-functi.patch
 Patch3041: 0041-Add-the-SEQUENCE-attribute-by-default-if-it-s-not-pr.patch
 Patch3042: 0042-More-general-rules-for-use-of-.-as-structure-operato.patch
-Patch3043: 0043-Add-std-extra-legacy.patch
-Patch3044: 0044-Only-allow-redefinition-of-procedure-type-with-std-e.patch
-Patch3045: 0045-Correct-warnings-expected-in-hollerith-int-compariso.patch
-Patch3046: 0046-Improved-support-for-STRUCTURE-add-_SI-to-the-name-o.patch
-#Patch3047: 0047-Remove-all-references-to-foracle-support-this-is-now.patch
+Patch3043: 0043-Only-allow-redefinition-of-procedure-type-with-std-e.patch
+Patch3044: 0044-Correct-warnings-expected-in-hollerith-int-compariso.patch
+Patch3045: 0045-Improved-support-for-STRUCTURE-add-_SI-to-the-name-o.patch
+Patch3046: 0046-Remove-all-references-to-foracle-support-this-is-now.patch
 
 %if 0%{?rhel} >= 7
 %global nonsharedver 48
@@ -631,6 +632,7 @@ cd ..
 %endif
 
 # Apply Bloomberg specific patches
+%patch3000 -p1 -b .blp0000~
 %patch3001 -p1 -b .blp0001~
 %patch3002 -p1 -b .blp0002~
 %patch3003 -p1 -b .blp0003~
@@ -661,7 +663,7 @@ cd ..
 %patch3028 -p1 -b .blp0028~
 %patch3029 -p1 -b .blp0029~
 %patch3030 -p1 -b .blp0030~
-#%patch3031 -p1 -b .blp0031~
+%patch3031 -p1 -b .blp0031~
 %patch3032 -p1 -b .blp0032~
 %patch3033 -p1 -b .blp0033~
 %patch3034 -p1 -b .blp0034~
@@ -677,7 +679,6 @@ cd ..
 %patch3044 -p1 -b .blp0044~
 %patch3045 -p1 -b .blp0045~
 %patch3046 -p1 -b .blp0046~
-#%patch3047 -p1 -b .blp0047~
 
 sed -i -e 's/4\.8\.3/4.8.2/' gcc/BASE-VER
 echo 'Red Hat %{version}-%{gcc_release}' > gcc/DEV-PHASE
