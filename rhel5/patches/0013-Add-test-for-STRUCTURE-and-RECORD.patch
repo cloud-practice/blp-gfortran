@@ -1,0 +1,46 @@
+From ae3193edda6f37a0948406b773b9f758f2e4805b Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Thu, 4 Feb 2016 18:04:04 +0000
+Subject: [PATCH 13/46] Add test for STRUCTURE and RECORD.
+
+---
+ gcc/testsuite/gfortran.dg/vax_structure_1.f90 | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+ create mode 100644 gcc/testsuite/gfortran.dg/vax_structure_1.f90
+
+diff --git a/gcc/testsuite/gfortran.dg/vax_structure_1.f90 b/gcc/testsuite/gfortran.dg/vax_structure_1.f90
+new file mode 100644
+index 0000000..16fb9f9
+--- /dev/null
++++ b/gcc/testsuite/gfortran.dg/vax_structure_1.f90
+@@ -0,0 +1,27 @@
++! { dg-do compile }
++! { dg-options "-foracle-support" }
++! Tests the VAX STRUCTURE and RECORD statements.
++! These are syntactic sugar for TYPE statements.
++
++      program vax_structure_1
++      structure /stocklevel/
++         integer*2   A
++         integer*4   B
++         integer*4   CS(0:15)
++         byte        D(0:15)
++      end structure
++
++      record /stocklevel/ rec1, recs(100)
++      integer x
++      integer*2 y
++
++      rec1.A = 100
++      recs(100).CS(10)=1
++      x = 150
++      y = 150
++
++      print *, rec1.B.eq.100
++      print *, rec1.A.eq.x ! {dg-error "are INTEGER(2)/INTEGER(4)"}
++      print *, rec1.A.eq.y
++      print *, recs(100).CS(10)
++      end program
+-- 
+1.9.1
+
