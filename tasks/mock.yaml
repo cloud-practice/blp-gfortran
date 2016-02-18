@@ -5,21 +5,39 @@
   vars:
     gcc_version: 4.8
     scl_name: blpdevtools
+    version: "{{ release | regex_replace( '[A-Za-z]*', '' ) }}"
   remote_user: jenkins
   tasks:
-  - name: temporary debug info
-    shell: pwd
   - name: ensure rpmdevtools is installed
     yum: name=rpmdevtools state=latest
+
   - name: ensure yum-utils is installed
     yum: name=yum-utils state=latest
+
   - name: Install mock
     yum: name=mock state=latest
+
   - name: Install mock-scm
     yum: name=mock-scm state=latest
+
   - name : Ensure current user is in the mock group
     user: name=jenkins groups=mock append=yes
+
+  - name: Set SPEC file based on RHEL5 verison
+    set_fact: spec="devtoolset-2-gcc-{{ gcc_version }}.2-15.1.el5.spec"
+    when: "{{ version }}==5"
+
+  - name: Determine SPEC file based on RHEL6 verison
+    set_fact: spec="devtoolset-2-gcc-{{ gcc_version }}.2-15.1.el6.spec"
+    when: "{{ version }}==6"
+
+  - name: Determine SPEC file based on RHEL7 verison
+    set_fact: spec="gcc.{{ gcc_version }}.5-4.el7.spec"
+    when: "{{ version }}==7"
+
   - name: Run mock build
-    shell: "mock -r {{ ansible_env.PWD }}/../files/mock-config-epel-7.cfg --verbose"
+    shell: "mock -r /etc/mock/epel-{{ version }}-x86_64.cfg --buildsrpm \
+            --sources /var/lib/jenkins/gcc-sources/rhel{{ version }}/SOURCES \
+            --spec {{ ansible_env.PWD }}/../rhel{{ version }}/{{ spec }}"
     async: 36000 # Wait up to 10 hours
-    poll: 20
+    poll: 30
