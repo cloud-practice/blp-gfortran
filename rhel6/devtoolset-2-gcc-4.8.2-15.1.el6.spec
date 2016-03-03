@@ -327,6 +327,7 @@ Patch3043: 0043-Only-allow-redefinition-of-procedure-type-with-std-e.patch
 Patch3044: 0044-Correct-warnings-expected-in-hollerith-int-compariso.patch
 Patch3045: 0045-Improved-support-for-STRUCTURE-add-_SI-to-the-name-o.patch
 Patch3046: 0046-Remove-all-references-to-foracle-support-this-is-now.patch
+Patch1234: 1234-Demo-of-no-op-Example.patch
 
 %if 0%{?rhel} >= 7
 %global nonsharedver 48
@@ -679,6 +680,7 @@ cd ..
 %patch3044 -p1 -b .blp0044~
 %patch3045 -p1 -b .blp0045~
 %patch3046 -p1 -b .blp0046~
+%patch1234 -p1 -b .blp1234~
 
 sed -i -e 's/4\.8\.3/4.8.2/' gcc/BASE-VER
 echo 'Red Hat %{version}-%{gcc_release}' > gcc/DEV-PHASE
