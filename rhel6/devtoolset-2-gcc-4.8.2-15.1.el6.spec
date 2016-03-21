@@ -2205,7 +2205,7 @@ fi
 %{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/plugin
 
 %changelog
-* Mon March 21 2016 Zaina Afoulki <zaina@redhat.com> 4.8.2-16
+* Mon Mar 21 2016 Zaina Afoulki <zaina@redhat.com> 4.8.2-16
 - add set of Bloomberg patches for gfortran compiler
 
 * Sun Jul 20 2014 Jonathan Wakely <jwakely@redhat.com> 4.8.2-15.1
