@@ -1,0 +1,394 @@
+From c89e303e196290bbe4c03fc4c994a11ec00bac5d Mon Sep 17 00:00:00 2001
+From: Jim MacArthur <jim.macarthur@codethink.co.uk>
+Date: Thu, 17 Mar 2016 15:12:58 +0000
+Subject: [PATCH 1/2] Revert all previous support for STRUCTURE.
+
+This reverts commits:
+* 6c9bd7d42a37b5c405f9b4d5d51809f5360f5af0
+* a0e1e561c30e916868b9a857c35b1194dab0426a
+* 183f4567c901b5a379cf12311b95559f3b4b298b
+* 1267a29dd117a82243dea91d7b7586912da13ca3
+---
+ gcc/fortran/decl.c     | 101 +++++++++----------------------------------------
+ gcc/fortran/gfortran.h |   2 +-
+ gcc/fortran/match.c    |   4 +-
+ gcc/fortran/match.h    |   1 -
+ gcc/fortran/matchexp.c |  12 +++---
+ gcc/fortran/parse.c    |   1 -
+ gcc/fortran/primary.c  |  24 +-----------
+ 7 files changed, 27 insertions(+), 118 deletions(-)
+
+diff --git a/gcc/fortran/decl.c b/gcc/fortran/decl.c
+index e4ea22b..8ff7bca 100644
+--- a/gcc/fortran/decl.c
++++ b/gcc/fortran/decl.c
+@@ -2654,9 +2654,7 @@ gfc_match_decl_type_spec (gfc_typespec *ts, int implicit_flag)
+   match m;
+   char c;
+   bool seen_deferred_kind, matched_type;
+-  char closed_type_string[3];
+-  char closing_character;
+-  const char *dt_name, *fn_name;
++  const char *dt_name;
+ 
+   /* A belt and braces check that the typespec is correctly being treated
+      as a deferred characteristic association.  */
+@@ -2689,27 +2687,14 @@ gfc_match_decl_type_spec (gfc_typespec *ts, int implicit_flag)
+     }
+ 
+ 
+-  closing_character = ')';
+   m = gfc_match (" type (");
+-  if(m != MATCH_YES)
+-    {
+-      m = gfc_match (" record (");
+-      if(m != MATCH_YES)
+-	{
+-	  m = gfc_match (" record /");
+-	  if(m == MATCH_YES)
+-	    closing_character = '/';
+-	}
+-    }
+-
+   matched_type = (m == MATCH_YES);
+   if (matched_type)
+     {
+       gfc_gobble_whitespace ();
+       if (gfc_peek_ascii_char () == '*')
+ 	{
+-	  snprintf(closed_type_string, 3, "*%c", closing_character);
+-	  if ((m = gfc_match (closed_type_string)) != MATCH_YES)
++	  if ((m = gfc_match ("*)")) != MATCH_YES)
+ 	    return m;
+ 	  if (gfc_current_state () == COMP_DERIVED)
+ 	    {
+@@ -2749,7 +2734,7 @@ gfc_match_decl_type_spec (gfc_typespec *ts, int implicit_flag)
+       else
+ 	m = MATCH_YES;
+ 
+-      if (matched_type && m == MATCH_YES && gfc_match_char (closing_character) != MATCH_YES)
++      if (matched_type && m == MATCH_YES && gfc_match_char (')') != MATCH_YES)
+ 	m = MATCH_ERROR;
+ 
+       return m;
+@@ -2773,7 +2758,7 @@ gfc_match_decl_type_spec (gfc_typespec *ts, int implicit_flag)
+ 	  && gfc_notify_std (GFC_STD_F2008, "TYPE with "
+ 			  "intrinsic-type-spec at %C") == FAILURE)
+ 	return MATCH_ERROR;
+-      if (matched_type && gfc_match_char (closing_character) != MATCH_YES)
++      if (matched_type && gfc_match_char (')') != MATCH_YES)
+ 	return MATCH_ERROR;
+ 
+       ts->type = BT_REAL;
+@@ -2804,7 +2789,7 @@ gfc_match_decl_type_spec (gfc_typespec *ts, int implicit_flag)
+ 			  "intrinsic-type-spec at %C") == FAILURE)
+ 	return MATCH_ERROR;
+ 
+-      if (matched_type && gfc_match_char (closing_character) != MATCH_YES)
++      if (matched_type && gfc_match_char (')') != MATCH_YES)
+ 	return MATCH_ERROR;
+ 
+       ts->type = BT_COMPLEX;
+@@ -2821,7 +2806,7 @@ gfc_match_decl_type_spec (gfc_typespec *ts, int implicit_flag)
+     }
+ 
+   if (matched_type)
+-    m = gfc_match_char (closing_character);
++    m = gfc_match_char (')');
+ 
+   if (m == MATCH_YES)
+     ts->type = BT_DERIVED;
+@@ -2899,30 +2884,14 @@ gfc_match_decl_type_spec (gfc_typespec *ts, int implicit_flag)
+   dt_name = gfc_get_string ("%c%s",
+ 			    (char) TOUPPER ((unsigned char) name[0]),
+ 			    (const char*)&name[1]);
+-
+-  fn_name = gfc_get_string ("%s", (const char*)name);
+-
+   sym = NULL;
+   dt_sym = NULL;
+   if (ts->kind != -1)
+     {
+-      /* Look for the derived type and the initializer function. If the type has
+-	 the 'structure' tag, it came from a STRUCTURE keyword, and as such the
+-	 initializer function is obfuscated. */
+-
+-      int find_dt_sym_err = gfc_find_symbol (dt_name, NULL, 0, &dt_sym);
+-      if (dt_sym != NULL && dt_sym->attr.structure)
++      gfc_get_ha_symbol (name, &sym);
++      if (sym->generic && gfc_find_symbol (dt_name, NULL, 0, &dt_sym))
+ 	{
+-	  fn_name = gfc_get_string ("%s_SI", (const char*) name);
+-	  if (gfc_find_symbol(fn_name, NULL, 0, &sym) || sym == NULL) {
+-	    gfc_error ("No initializer was defined for type '%s' at %C", name);
+-	    return MATCH_ERROR;
+-	  }
+-	}
+-      gfc_get_ha_symbol (fn_name, &sym);
+-      if (sym->generic && find_dt_sym_err)
+-	{
+-	  gfc_error ("Type name '%s' at %C is ambiguous", fn_name);
++	  gfc_error ("Type name '%s' at %C is ambiguous", name);
+ 	  return MATCH_ERROR;
+ 	}
+       if (sym->generic && !dt_sym)
+@@ -2932,7 +2901,7 @@ gfc_match_decl_type_spec (gfc_typespec *ts, int implicit_flag)
+     {
+       int iface = gfc_state_stack->previous->state != COMP_INTERFACE
+ 		    || gfc_current_ns->has_import_set;
+-      gfc_find_symbol (fn_name, NULL, iface, &sym);
++      gfc_find_symbol (name, NULL, iface, &sym);
+       if (sym && sym->generic && gfc_find_symbol (dt_name, NULL, 1, &dt_sym))
+ 	{
+ 	  gfc_error ("Type name '%s' at %C is ambiguous", name);
+@@ -6255,13 +6224,8 @@ gfc_match_end (gfc_statement *st)
+   /* Verify that we've got the sort of end-block that we're expecting.  */
+   if (gfc_match (target) != MATCH_YES)
+     {
+-      /* Also accept 'structure' to end types. This isn't an ideal way of doing
+-         this check, but it keeps the delta small. */
+-      if (*st != ST_END_TYPE || gfc_match (" structure") != MATCH_YES)
+-	{
+-	  gfc_error ("Expecting %s statement at %C", gfc_ascii_statement (*st));
+-	  goto cleanup;
+-	}
++      gfc_error ("Expecting %s statement at %C", gfc_ascii_statement (*st));
++      goto cleanup;
+     }
+ 
+   /* If we're at the end, make sure a block name wasn't required.  */
+@@ -7678,7 +7642,7 @@ gfc_get_type_attr_spec (symbol_attribute *attr, char *name)
+    already to be known as a derived type yet have no components.  */
+ 
+ match
+-gfc_match_derived_or_structure_decl (int initializer_flag)
++gfc_match_derived_decl (void)
+ {
+   char name[GFC_MAX_SYMBOL_LEN + 1];
+   char parent[GFC_MAX_SYMBOL_LEN + 1];
+@@ -7689,7 +7653,6 @@ gfc_match_derived_or_structure_decl (int initializer_flag)
+   match is_type_attr_spec = MATCH_NO;
+   bool seen_attr = false;
+   gfc_interface *intr = NULL, *head;
+-  const char* fn_name;
+ 
+   if (gfc_current_state () == COMP_DERIVED)
+     return MATCH_NO;
+@@ -7725,11 +7688,7 @@ gfc_match_derived_or_structure_decl (int initializer_flag)
+ 
+   m = gfc_match (" %n%t", name);
+   if (m != MATCH_YES)
+-    {
+-      m = gfc_match (" /%n/%t", name);
+-      if (m != MATCH_YES)
+-	return m;
+-    }
++    return m;
+ 
+   /* Make sure the name is not the name of an intrinsic type.  */
+   if (gfc_is_intrinsic_typename (name))
+@@ -7739,16 +7698,7 @@ gfc_match_derived_or_structure_decl (int initializer_flag)
+       return MATCH_ERROR;
+     }
+ 
+-  if (initializer_flag)
+-    {
+-      fn_name = name;
+-    }
+-  else
+-    {
+-      fn_name = gfc_get_string ("%s_SI", name);
+-    }
+-
+-  if (gfc_get_symbol (fn_name, NULL, &gensym))
++  if (gfc_get_symbol (name, NULL, &gensym))
+     return MATCH_ERROR;
+ 
+   if (!gensym->attr.generic && gensym->ts.type != BT_UNKNOWN)
+@@ -7779,9 +7729,9 @@ gfc_match_derived_or_structure_decl (int initializer_flag)
+     {
+       /* Use upper case to save the actual derived-type symbol.  */
+       gfc_get_symbol (gfc_get_string ("%c%s",
+-			(char) TOUPPER ((unsigned char) name[0]),
+-			 &name[1]), NULL, &sym);
+-      sym->name = gfc_get_string (name);
++			(char) TOUPPER ((unsigned char) gensym->name[0]),
++			&gensym->name[1]), NULL, &sym);
++      sym->name = gfc_get_string (gensym->name);
+       head = gensym->generic;
+       intr = gfc_get_interface ();
+       intr->sym = sym;
+@@ -7810,10 +7760,6 @@ gfc_match_derived_or_structure_decl (int initializer_flag)
+ 	      == FAILURE)
+     return MATCH_ERROR;
+ 
+-  /* If we specified an initializer, this is a derived type, otherwise it's a
+-     legacy structure */
+-  sym->attr.structure =  initializer_flag ? 0 : 1;
+-
+   if (sym->attr.access != ACCESS_UNKNOWN
+       && gensym->attr.access == ACCESS_UNKNOWN)
+     gensym->attr.access = sym->attr.access;
+@@ -7870,17 +7816,6 @@ gfc_match_derived_or_structure_decl (int initializer_flag)
+   return MATCH_YES;
+ }
+ 
+-match
+-gfc_match_derived_decl (void)
+-{
+-  return gfc_match_derived_or_structure_decl (1);
+-}
+-
+-match
+-gfc_match_structure_decl (void)
+-{
+-  return gfc_match_derived_or_structure_decl (0);
+-}
+ 
+ /* Cray Pointees can be declared as:
+       pointer (ipt, a (n,m,...,*))  */
+diff --git a/gcc/fortran/gfortran.h b/gcc/fortran/gfortran.h
+index 9c6f263..b6cc396 100644
+--- a/gcc/fortran/gfortran.h
++++ b/gcc/fortran/gfortran.h
+@@ -804,7 +804,7 @@ typedef struct
+      entities.  */
+   unsigned alloc_comp:1, pointer_comp:1, proc_pointer_comp:1,
+ 	   private_comp:1, zero_comp:1, coarray_comp:1, lock_comp:1,
+-	   defined_assign_comp:1, unlimited_polymorphic:1, structure:1;
++	   defined_assign_comp:1, unlimited_polymorphic:1;
+ 
+   /* This is a temporary selector for SELECT TYPE or an associate
+      variable for SELECT_TYPE or ASSOCIATE.  */
+diff --git a/gcc/fortran/match.c b/gcc/fortran/match.c
+index c1e4078..9b70574 100644
+--- a/gcc/fortran/match.c
++++ b/gcc/fortran/match.c
+@@ -532,8 +532,8 @@ gfc_match_name (char *buffer)
+   c = gfc_next_ascii_char ();
+   if (!(ISALPHA (c) || (c == '_' && gfc_option.flag_allow_leading_underscore)))
+     {
+-      if (gfc_error_flag_test() == 0 && c != '(' && c != '/')
+-        gfc_error ("Invalid character in name ('%c') at %C",c);
++      if (gfc_error_flag_test() == 0 && c != '(')
++	gfc_error ("Invalid character in name at %C");
+       gfc_current_locus = old_loc;
+       return MATCH_NO;
+     }
+diff --git a/gcc/fortran/match.h b/gcc/fortran/match.h
+index bf751d6..16b1cc9 100644
+--- a/gcc/fortran/match.h
++++ b/gcc/fortran/match.h
+@@ -160,7 +160,6 @@ match gfc_match_function_decl (void);
+ match gfc_match_entry (void);
+ match gfc_match_subroutine (void);
+ match gfc_match_derived_decl (void);
+-match gfc_match_structure_decl (void);
+ match gfc_match_final_decl (void);
+ 
+ match gfc_match_implicit_none (void);
+diff --git a/gcc/fortran/matchexp.c b/gcc/fortran/matchexp.c
+index ab09f48..4643281 100644
+--- a/gcc/fortran/matchexp.c
++++ b/gcc/fortran/matchexp.c
+@@ -32,16 +32,14 @@ static char expression_syntax[] = N_("Syntax error in expression at %C");
+    few restrictions.  The error_flag controls whether an error is
+    raised if 'true' or 'false' are used or not.  */
+ 
+-extern const char* const badops[];
+-
+-const char * const badops[] = {
+-  "and", "or", "not", "eqv", "neqv", "eq", "ne", "ge", "le", "lt", "gt",
+-  NULL
+-};
+-
+ match
+ gfc_match_defined_op_name (char *result, int error_flag)
+ {
++  static const char * const badops[] = {
++    "and", "or", "not", "eqv", "neqv", "eq", "ne", "ge", "le", "lt", "gt",
++      NULL
++  };
++
+   char name[GFC_MAX_SYMBOL_LEN + 1];
+   locus old_loc;
+   match m;
+diff --git a/gcc/fortran/parse.c b/gcc/fortran/parse.c
+index e164a8d..54449e0 100644
+--- a/gcc/fortran/parse.c
++++ b/gcc/fortran/parse.c
+@@ -498,7 +498,6 @@ decode_statement (void)
+       match ("sync all", gfc_match_sync_all, ST_SYNC_ALL);
+       match ("sync images", gfc_match_sync_images, ST_SYNC_IMAGES);
+       match ("sync memory", gfc_match_sync_memory, ST_SYNC_MEMORY);
+-      match ("structure", gfc_match_structure_decl, ST_DERIVED_DECL);
+       break;
+ 
+     case 't':
+diff --git a/gcc/fortran/primary.c b/gcc/fortran/primary.c
+index fa32076..3e18e05 100644
+--- a/gcc/fortran/primary.c
++++ b/gcc/fortran/primary.c
+@@ -30,9 +30,6 @@ along with GCC; see the file COPYING3.  If not see
+ 
+ int matching_actual_arglist = 0;
+ 
+-/* A list of intrinsic operation names from matchexp.c */
+-extern const char* const badops[];
+-
+ /* Matches a kind-parameter expression, which is either a named
+    symbolic constant or a nonnegative integer constant.  If
+    successful, sets the kind value to the correct integer.
+@@ -1848,7 +1845,6 @@ gfc_match_varspec (gfc_expr *primary, int equiv_flag, bool sub_flag,
+   gfc_symbol *sym = primary->symtree->n.sym;
+   match m;
+   bool unknown;
+-  locus old_locus;
+ 
+   tail = NULL;
+ 
+@@ -1946,10 +1942,8 @@ gfc_match_varspec (gfc_expr *primary, int equiv_flag, bool sub_flag,
+       return MATCH_ERROR;
+     }
+ 
+-  old_locus = gfc_current_locus;
+-
+   if ((sym->ts.type != BT_DERIVED && sym->ts.type != BT_CLASS)
+-      || gfc_match_structure_access_operator () != MATCH_YES)
++      || gfc_match_char ('%') != MATCH_YES)
+     goto check_substring;
+ 
+   sym = sym->ts.u.derived;
+@@ -1958,7 +1952,6 @@ gfc_match_varspec (gfc_expr *primary, int equiv_flag, bool sub_flag,
+     {
+       gfc_try t;
+       gfc_symtree *tbp;
+-      int is_operation_name = 0;
+ 
+       m = gfc_match_name (name);
+       if (m == MATCH_NO)
+@@ -2019,21 +2012,6 @@ gfc_match_varspec (gfc_expr *primary, int equiv_flag, bool sub_flag,
+ 	  break;
+ 	}
+ 
+-      /* If this is a reserved name, we should reject this and continue parsing */
+-      for (int i=0; badops[i] != NULL; i++)
+-        {
+-          if (strcmp (name, badops[i])==0)
+-            {
+-              is_operation_name = 1; break;
+-            }
+-        }
+-
+-      if (is_operation_name || gfc_find_uop (name, NULL))
+-        {
+-          gfc_current_locus = old_locus;
+-          break; /* Equivalent to jumping to check_substring */
+-        }
+-
+       component = gfc_find_component (sym, name, false, false);
+       if (component == NULL)
+ 	return MATCH_ERROR;
+-- 
+2.5.0
+

@@ -337,6 +337,9 @@ Patch3043: 0043-Only-allow-redefinition-of-procedure-type-with-std-e.patch
 Patch3044: 0044-Correct-warnings-expected-in-hollerith-int-compariso.patch
 Patch3045: 0045-Improved-support-for-STRUCTURE-add-_SI-to-the-name-o.patch
 Patch3046: 0046-Remove-all-references-to-foracle-support-this-is-now.patch
+Patch3047: 0047-Revert-all-previous-support-for-STRUCTURE.patch
+Patch3048: 0048-STRUCTURE-UNION-and-MAP-support.patch
+Patch3049: 0049-union-fix-for-rhel6.patch
 
 
 %if 0%{?rhel} >= 7
@@ -693,6 +696,9 @@ cd ..
 %patch3044 -p1 -b .blp0044~
 %patch3045 -p1 -b .blp0045~
 %patch3046 -p1 -b .blp0046~
+%patch3047 -p1 -b .blp0047~
+%patch3048 -p1 -b .blp0048~
+%patch3049 -p1 -b .blp0049~
 
 sed -i -e 's/4\.8\.3/4.8.2/' gcc/BASE-VER
 echo 'Red Hat %{version}-%{gcc_release}' > gcc/DEV-PHASE
@@ -2213,6 +2219,9 @@ fi
 %{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/plugin
 
 %changelog
+* Mon March 21 2016 Zaina Afoulki <zaina@redhat.com> 4.8.2-16
+- add set of Bloomberg patches for gfortran compiler
+
 * Sun Jul 20 2014 Jonathan Wakely <jwakely@redhat.com> 4.8.2-15.1
 - add alternative std::condition_variable_any implementation (#1118870)
 
