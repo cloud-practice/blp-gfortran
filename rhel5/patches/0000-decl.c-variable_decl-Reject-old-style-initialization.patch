@@ -1,10 +1,10 @@
 From 00ac4e65e83282ffb4cc5f553103c6d80b2d48c5 Mon Sep 17 00:00:00 2001
 From: jakub <jakub@138bc75d-0d04-0410-961f-82ee72b054a4>
 Date: Wed, 2 Jul 2014 09:48:56 +0000
-Subject: [PATCH] 	* decl.c (variable_decl): Reject old style
- initialization 	for derived type components.
+Subject: [PATCH]        * decl.c (variable_decl): Reject old style
+ initialization         for derived type components.
 
-	* gfortran.dg/oldstyle_5.f: New test.
+        * gfortran.dg/oldstyle_5.f: New test.
 
 
 git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/branches/gcc-4_8-branch@212229 138bc75d-0d04-0410-961f-82ee72b054a4
@@ -22,16 +22,16 @@ index 7dec803..9292418a 100644
 +++ b/gcc/fortran/decl.c
 @@ -1996,6 +1996,13 @@ variable_decl (int elem)
        if (gfc_notify_std (GFC_STD_GNU, "Old-style "
- 			  "initialization at %C") == FAILURE)
- 	return MATCH_ERROR;
+                          "initialization at %C") == FAILURE)
+        return MATCH_ERROR;
 +      else if (gfc_current_state () == COMP_DERIVED)
-+	{
-+	  gfc_error ("Invalid old style initialization for derived type "
-+		     "component at %C");
-+	  m = MATCH_ERROR;
-+	  goto cleanup;
-+	}
- 
++       {
++         gfc_error ("Invalid old style initialization for derived type "
++                    "component at %C");
++         m = MATCH_ERROR;
++         goto cleanup;
++       }
+
        return match_old_style_init (name);
      }
 diff --git a/gcc/testsuite/gfortran.dg/oldstyle_5.f b/gcc/testsuite/gfortran.dg/oldstyle_5.f
@@ -48,6 +48,6 @@ index 0000000..8a0d311
 +      INTEGER B/1/ ! { dg-error "Invalid old style initialization for derived type component" }
 +      END TYPE
 +      END
--- 
+--
 1.9.1
 
