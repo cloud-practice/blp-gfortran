@@ -609,15 +609,6 @@ index 8ff7bca..4fb8e26 100644
  	    {
  	      gfc_error ("Initialization of variable at %C is not allowed in "
  			 "a PURE procedure");
-@@ -2123,7 +2289,7 @@ variable_decl (int elem)
- 	    }
- 
- 	  if (current_attr.flavor != FL_PARAMETER
--	      && gfc_state_stack->state != COMP_DERIVED)
-+	      && !gfc_comp_is_derived(gfc_state_stack->state))
- 	    gfc_unset_implicit_pure (gfc_current_ns->proc_name);
- 
- 	  if (m != MATCH_YES)
 @@ -2132,7 +2298,7 @@ variable_decl (int elem)
      }
  
@@ -2644,15 +2635,6 @@ index 4fd0d88..379c390 100644
    /* Mark as only or rename for later diagnosis for explicitly imported
       but not used warnings; don't mark internal symbols such as __vtab,
       __def_init etc. Only mark them if they have been explicitly loaded.  */
-@@ -4521,7 +4528,7 @@ read_module (void)
- 	 can be used in expressions in the module.  To avoid the module loading
- 	 failing, we need to associate the module's component pointer indexes
- 	 with the existing symbol's component pointers.  */
--      if (sym->attr.flavor == FL_DERIVED)
-+      if (gfc_fl_struct (sym->attr.flavor))
- 	{
- 	  gfc_component *c;
- 
 @@ -4673,7 +4680,7 @@ read_module (void)
  		{
  		  info->u.rsym.sym = gfc_new_symbol (info->u.rsym.true_name,
