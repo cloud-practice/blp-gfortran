@@ -1,4 +1,3 @@
-%define debug_package %{nil}
 %{?scl:%scl_package gcc}
 %{?scl:%global __strip strip}
 %{?scl:%global __objdump objdump}
@@ -74,7 +73,7 @@ License: GPLv3+ and GPLv3+ with exceptions and GPLv2+ with exceptions and LGPLv2
 Group: Development/Languages
 # The source for this package was pulled from upstream's vcs.  Use the
 # following commands to generate the tarball:
-# svn export svn://gcc.gnu.org/svn/gcc/branches/redhat/gcc-4_7-branch@%{SVNREV} gcc-%{version}-%{DATE}
+# svn export svn://gcc.gnu.org/svn/gcc/branches/redhat/gcc-4_8-branch@%{SVNREV} gcc-%{version}-%{DATE}
 # tar cf - gcc-%{version}-%{DATE} | bzip2 -9 > gcc-%{version}-%{DATE}.tar.bz2
 Source0: gcc-%{version}-%{DATE}.tar.bz2
 Source1: http://www.mpfr.org/mpfr-%{mpfr_version}/mpfr-%{mpfr_version}.tar.bz2
@@ -279,6 +278,58 @@ Patch1100: isl-%{isl_version}-aarch64-config.patch
 Patch2001: doxygen-1.7.1-config.patch
 Patch2002: doxygen-1.7.5-timestamp.patch
 Patch2003: doxygen-1.8.0-rh856725.patch
+
+# Define Bloomberg specific patches provided by Codethink
+Patch3000: 0000-decl.c-variable_decl-Reject-old-style-initialization.patch
+Patch3001: 0001-Allow-under-specified-array-references.patch
+Patch3002: 0002-Add-an-AUTOMATIC-statement-for-use-with-fno-automati.patch
+Patch3003: 0003-Add-tests-for-AUTOMATIC-keyword.patch
+Patch3004: 0004-Allow-repeated-compatible-type-specifications.patch
+Patch3005: 0005-Add-test-for-duplicate-type-statements.patch
+Patch3006: 0006-Correct-internal-fault-in-select_type_9.f90.patch
+Patch3007: 0007-Add-test-for-underspecified-array-references.patch
+Patch3008: 0008-Fix-warning-message-for-underspecified-arrays.patch
+Patch3009: 0009-Add-support-for-the-STRUCTURE-statement-which-is-syn.patch
+Patch3010: 0010-Add-std-extra-legacy.patch
+Patch3011: 0011-Allow-dot-.-operator-as-structure-member-operator.patch
+Patch3012: 0012-Allow-RECORD-statement-with-slash-quoted-names.patch
+Patch3013: 0013-Add-test-for-STRUCTURE-and-RECORD.patch
+Patch3014: 0014-Support-comparison-between-HOLLERITH-and-CHARACTER-p.patch
+Patch3015: 0015-Character-to-integer-assignment-support.patch
+Patch3016: 0016-Documentation-for-the-AUTOMATIC-statement.patch
+Patch3017: 0017-Correction-to-gfc_add_automatic-fail-if-gfc_notify_s.patch
+Patch3018: 0018-Correct-error-in-character2representation.patch
+Patch3019: 0019-Pad-character-to-int-conversions-with-spaces-instead.patch
+Patch3020: 0020-Promote-int-to-real-when-using-check_a_p.patch
+Patch3021: 0021-Pad-character-to-int-conversions-with-spaces-instead.patch
+Patch3022: 0022-Fixup-57fd95a-Typo-in-DEFAULT_WIDTH.patch
+Patch3023: 0023-Very-hacky-implementation-of-default-widths-for-floa.patch
+Patch3024: 0024-Allow-more-than-one-character-as-argument-to-ICHAR.patch
+Patch3025: 0025-Allow-non-integer-substring-indexes.patch
+Patch3026: 0026-Allow-blank-format-items-in-format-strings.patch
+Patch3027: 0027-Convert-integer-arguments-to-logicals-for-logical-op.patch
+Patch3028: 0028-Allow-mixed-string-length-and-array-specification-in.patch
+Patch3029: 0029-Allow-character-to-int-conversions-in-DATA-statement.patch
+Patch3030: 0030-Convert-logicals-to-ints-for-arithmetic-ops-and-vice.patch
+Patch3031: 0031-Experimental-Old-style-initializers-in-derived-types.patch
+Patch3032: 0032-Allow-per-variable-kind-specification.patch
+Patch3033: 0033-Add-support-for-integer-expressions-in-IF-statements.patch
+Patch3034: 0034-Allow-continued-include-lines.patch
+Patch3035: 0035-Allow-non-logical-expressions-in-basic-form-of-IF-st.patch
+Patch3036: 0036-Allow-redefinition-of-types-for-procedures.patch
+Patch3037: 0037-Allow-character-to-int-comparisons.patch
+Patch3038: 0038-Accept-.xor.-as-an-alias-for-.neqv.patch
+Patch3039: 0039-Allow-calls-to-intrinsics-with-smaller-types-than-sp.patch
+Patch3040: 0040-Refine-the-promotion-of-smaller-ints-during-a-functi.patch
+Patch3041: 0041-Add-the-SEQUENCE-attribute-by-default-if-it-s-not-pr.patch
+Patch3042: 0042-More-general-rules-for-use-of-.-as-structure-operato.patch
+Patch3043: 0043-Only-allow-redefinition-of-procedure-type-with-std-e.patch
+Patch3044: 0044-Correct-warnings-expected-in-hollerith-int-compariso.patch
+Patch3045: 0045-Improved-support-for-STRUCTURE-add-_SI-to-the-name-o.patch
+Patch3046: 0046-Remove-all-references-to-foracle-support-this-is-now.patch
+Patch3047: 0047-Revert-all-previous-support-for-STRUCTURE.patch
+Patch3048: 0048-STRUCTURE-UNION-and-MAP-support.patch
+Patch3049: 0049-union-fix-for-rhel6.patch
 
 %if 0%{?rhel} >= 7
 %global nonsharedver 48
@@ -582,6 +633,58 @@ cd doxygen-%{doxygen_version}
 cd ..
 %endif
 %endif
+
+# Apply Bloomberg specific patches
+%patch3000 -p1 -b .blp0000~
+%patch3001 -p1 -b .blp0001~
+%patch3002 -p1 -b .blp0002~
+%patch3003 -p1 -b .blp0003~
+%patch3004 -p1 -b .blp0004~
+%patch3005 -p1 -b .blp0005~
+%patch3006 -p1 -b .blp0006~
+%patch3007 -p1 -b .blp0007~
+%patch3008 -p1 -b .blp0008~
+%patch3009 -p1 -b .blp0009~
+%patch3010 -p1 -b .blp0010~
+%patch3011 -p1 -b .blp0011~
+%patch3012 -p1 -b .blp0012~
+%patch3013 -p1 -b .blp0013~
+%patch3014 -p1 -b .blp0014~
+%patch3015 -p1 -b .blp0015~
+%patch3016 -p1 -b .blp0016~
+%patch3017 -p1 -b .blp0017~
+%patch3018 -p1 -b .blp0018~
+%patch3019 -p1 -b .blp0019~
+%patch3020 -p1 -b .blp0020~
+%patch3021 -p1 -b .blp0021~
+%patch3022 -p1 -b .blp0022~
+%patch3023 -p1 -b .blp0023~
+%patch3024 -p1 -b .blp0024~
+%patch3025 -p1 -b .blp0025~
+%patch3026 -p1 -b .blp0026~
+%patch3027 -p1 -b .blp0027~
+%patch3028 -p1 -b .blp0028~
+%patch3029 -p1 -b .blp0029~
+%patch3030 -p1 -b .blp0030~
+%patch3031 -p1 -b .blp0031~
+%patch3032 -p1 -b .blp0032~
+%patch3033 -p1 -b .blp0033~
+%patch3034 -p1 -b .blp0034~
+%patch3035 -p1 -b .blp0035~
+%patch3036 -p1 -b .blp0036~
+%patch3037 -p1 -b .blp0037~
+%patch3038 -p1 -b .blp0038~
+%patch3039 -p1 -b .blp0039~
+%patch3040 -p1 -b .blp0040~
+%patch3041 -p1 -b .blp0041~
+%patch3042 -p1 -b .blp0042~
+%patch3043 -p1 -b .blp0043~
+%patch3044 -p1 -b .blp0044~
+%patch3045 -p1 -b .blp0045~
+%patch3046 -p1 -b .blp0046~
+%patch3047 -p1 -b .blp0047~
+%patch3048 -p1 -b .blp0048~
+%patch3049 -p1 -b .blp0049~
 
 sed -i -e 's/4\.8\.3/4.8.2/' gcc/BASE-VER
 echo 'Red Hat %{version}-%{gcc_release}' > gcc/DEV-PHASE
@@ -2102,6 +2205,9 @@ fi
 %{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/plugin
 
 %changelog
+* Mon Mar 21 2016 Jim MacArthur <jim.macarthur@codethink.co.uk> 4.8.2-16
+- add set of Bloomberg patches for gfortran compiler
+
 * Sun Jul 20 2014 Jonathan Wakely <jwakely@redhat.com> 4.8.2-15.1
 - add alternative std::condition_variable_any implementation (#1118870)
 
@@ -2171,7 +2277,7 @@ fi
     -fdiagnostics-color=auto, -fdiagnostics-color=always or
     having non-empty GCC_COLORS variable in environment
   - backport -fstack-protector-strong support from trunk
-  
+
 * Fri May 10 2013 Jakub Jelinek <jakub@redhat.com> 4.8.0-5
 - update from F19 gcc-4.8.0-5
 
