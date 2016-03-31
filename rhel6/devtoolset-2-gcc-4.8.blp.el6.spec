@@ -2,6 +2,7 @@
 %{?scl:%global __strip strip}
 %{?scl:%global __objdump objdump}
 %global _default_patch_fuzz 2
+%global _default_patch_flags -l
 %global DATE 20140120
 %global SVNREV 206854
 %global gcc_version 4.8.2
@@ -330,6 +331,7 @@ Patch3046: 0046-Remove-all-references-to-foracle-support-this-is-now.patch
 Patch3047: 0047-Revert-all-previous-support-for-STRUCTURE.patch
 Patch3048: 0048-STRUCTURE-UNION-and-MAP-support.patch
 Patch3049: 0049-union-fix-for-rhel6.patch
+Patch3050: 0050-Fixes-to-gfortran.texi.patch
 
 %if 0%{?rhel} >= 7
 %global nonsharedver 48
@@ -685,6 +687,7 @@ cd ..
 %patch3047 -p1 -b .blp0047~
 %patch3048 -p1 -b .blp0048~
 %patch3049 -p1 -b .blp0049~
+%patch3050 -p1 -b .blp0050~
 
 sed -i -e 's/4\.8\.3/4.8.2/' gcc/BASE-VER
 echo 'Red Hat %{version}-%{gcc_release}' > gcc/DEV-PHASE
