@@ -3393,6 +3393,9 @@ fi
 %{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/plugin
 
 %changelog
+* Mon Mar 21 2016 Jim MacArthur <jim.macarthur@codethink.co.uk> 4.8.5-5
+- add set of legacy extensions to GFortran
+
 * Wed Jul 15 2015 Jakub Jelinek <jakub@redhat.com> 4.8.5-4
 - fix up basic_streambuf copy constructor and assignment operator
   (#1243366)

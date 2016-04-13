@@ -2208,8 +2208,8 @@ fi
 %{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/plugin
 
 %changelog
-* Mon Mar 21 2016 Jim MacArthur <jim.macarthur@codethink.co.uk> 4.8.2-16
-- add set of Bloomberg patches for gfortran compiler
+* Mon Mar 21 2016 Jim MacArthur <jim.macarthur@codethink.co.uk> 4.8.2-15.2
+- add set of legacy extensions to GFortran
 
 * Sun Jul 20 2014 Jonathan Wakely <jwakely@redhat.com> 4.8.2-15.1
 - add alternative std::condition_variable_any implementation (#1118870)
