@@ -281,6 +281,9 @@ Patch3044: 0044-Only-allow-redefinition-of-procedure-type-with-std-e.patch
 Patch3045: 0045-Correct-warnings-expected-in-hollerith-int-compariso.patch
 Patch3046: 0046-Improved-support-for-STRUCTURE-add-_SI-to-the-name-o.patch
 Patch3047: 0047-Remove-all-references-to-foracle-support-this-is-now.patch
+Patch3048: 0048-Revert-all-previous-support-for-STRUCTURE.patch
+Patch3049: 0049-STRUCTURE-UNION-and-MAP-support.patch
+Patch3050: 0050-Fixes-to-gfortran.texi.patch
 
 # On ARM EABI systems, we do want -gnueabi to be part of the
 # target triple.
@@ -1084,6 +1087,9 @@ tar xjf %{SOURCE10}
 %patch3045 -p1 -b .blp0045~
 %patch3046 -p1 -b .blp0046~
 %patch3047 -p1 -b .blp0047~
+%patch3048 -p1 -b .blp0048~
+%patch3049 -p1 -b .blp0049~
+%patch3050 -p1 -b .blp0050~
 
 
 sed -i -e 's/4\.8\.5/4.8.5/' gcc/BASE-VER
