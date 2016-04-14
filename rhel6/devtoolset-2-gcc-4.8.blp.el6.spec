@@ -1,7 +1,6 @@
 %{?scl:%scl_package gcc}
 %{?scl:%global __strip strip}
 %{?scl:%global __objdump objdump}
-%global _default_patch_fuzz 2
 %global _default_patch_flags -l
 %global DATE 20140120
 %global SVNREV 206854
