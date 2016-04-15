@@ -3399,7 +3399,7 @@ fi
 %{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/plugin
 
 %changelog
-* Mon Mar 21 2016 Jim MacArthur <jim.macarthur@codethink.co.uk> 4.8.2-15.2
+* Mon Mar 21 2016 Jim MacArthur <jim.macarthur@codethink.co.uk> 4.8.5-5
 - add legacy Fortran extensions such as AUTOMATIC, STRUCTURE, RECORD,
   continued include lines, .xor. operator, and under-specified arrays
 - more lax conversions during assignments and comparisons if
