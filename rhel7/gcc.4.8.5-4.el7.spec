@@ -80,7 +80,8 @@ Name: gcc
 %global gcc_version 4.8.5
 %endif
 Version: 4.8.5
-Release: %{gcc_release}%{?dist}
+#Release: %{gcc_release}%{?dist}
+Release: %{gcc_release}.0.0.lf%{?dist}
 %if "%{version}" != "%{gcc_version}"
 %define gcc_provides %{gcc_version}-16%{?dist}
 %endif
