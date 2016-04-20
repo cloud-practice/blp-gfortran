@@ -1,4 +1,4 @@
-%global _default_patch_fuzz 2
+%global _default_patch_fuzz 0
 %global DATE 20150702
 %global SVNREV 225304
 # Note, gcc_release must be integer, if you want to add suffixes to
