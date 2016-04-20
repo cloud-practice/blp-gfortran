@@ -2688,8 +2688,7 @@ diff --git a/gcc/fortran/options.c b/gcc/fortran/options.c
 index 08f885a..09e0897 100644
 --- a/gcc/fortran/options.c
 +++ b/gcc/fortran/options.c
-@@ -1125,7 +1125,14 @@ gfc_handle_option (size_t scode, const char *arg, int value,
-     case OPT_fcoarray_:
+@@ -1125,6 +1125,13 @@ gfc_handle_option (size_t scode, const char *arg, int value,
        gfc_handle_coarray_option (arg);
        break;
  
