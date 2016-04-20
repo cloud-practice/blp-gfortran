@@ -80,7 +80,8 @@ Name: gcc
 %global gcc_version 4.8.5
 %endif
 Version: 4.8.5
-Release: %{gcc_release}%{?dist}
+#Release: %{gcc_release}%{?dist}
+Release: %{gcc_release}.0.0.lf%{?dist}
 %if "%{version}" != "%{gcc_version}"
 %define gcc_provides %{gcc_version}-16%{?dist}
 %endif
@@ -3399,6 +3400,15 @@ fi
 %{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/plugin
 
 %changelog
+* Mon Mar 21 2016 Jim MacArthur <jim.macarthur@codethink.co.uk> 4.8.5-5
+- add legacy Fortran extensions such as AUTOMATIC, STRUCTURE, RECORD,
+  continued include lines, .xor. operator, and under-specified arrays
+- more lax conversions during assignments and comparisons if
+  -std=extra-legacy is specified
+- basic support for default field widths in format strings
+- UNION and MAP support adapted from Fritz Reese's patches to the
+  gfortran mailing list, enabled by -fdec-structure
+
 * Wed Jul 15 2015 Jakub Jelinek <jakub@redhat.com> 4.8.5-4
 - fix up basic_streambuf copy constructor and assignment operator
   (#1243366)

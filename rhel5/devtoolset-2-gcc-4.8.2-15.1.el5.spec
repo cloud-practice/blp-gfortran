@@ -10,7 +10,6 @@
 %{?scl:%scl_package gcc}
 %{?scl:%global __strip strip}
 %{?scl:%global __objdump objdump}
-%global _default_patch_fuzz 2
 %global DATE 20140120
 %global SVNREV 206854
 %global gcc_version 4.8.2
@@ -2219,8 +2218,14 @@ fi
 %{_prefix}/libexec/gcc/%{gcc_target_platform}/%{gcc_version}/plugin
 
 %changelog
-* Mon Mar 21 2016 Zaina Afoulki <zaina@redhat.com> 4.8.2-16
-- add set of Bloomberg patches for gfortran compiler
+* Mon Mar 21 2016 Jim MacArthur <jim.macarthur@codethink.co.uk> 4.8.2-15.2
+- add legacy Fortran extensions such as AUTOMATIC, STRUCTURE, RECORD,
+  continued include lines, .xor. operator, and under-specified arrays
+- more lax conversions during assignments and comparisons if
+  -std=extra-legacy is specified
+- basic support for default field widths in format strings
+- UNION and MAP support adapted from Fritz Reese's patches to the
+  gfortran mailing list, enabled by -fdec-structure
 
 * Sun Jul 20 2014 Jonathan Wakely <jwakely@redhat.com> 4.8.2-15.1
 - add alternative std::condition_variable_any implementation (#1118870)
