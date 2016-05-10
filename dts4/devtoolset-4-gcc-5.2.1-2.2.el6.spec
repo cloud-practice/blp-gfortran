@@ -82,7 +82,7 @@ Summary: GCC version 5
 Name: %{?scl_prefix}gcc
 #Name: %{?scl_prefix}gcc%{!?scl:5}
 Version: %{gcc_version}
-Release: %{gcc_release}.2%{?dist}
+Release: %{gcc_release}.2.lf.0.0%{?dist}
 # libgcc, libgfortran, libmudflap, libgomp, libstdc++ and crtstuff have
 # GCC Runtime Exception.
 License: GPLv3+ and GPLv3+ with exceptions and GPLv2+ with exceptions and LGPLv2+ and BSD
@@ -2555,6 +2555,15 @@ fi
 %doc rpm.doc/changelogs/libcc1/ChangeLog*
 
 %changelog
+* Tue May 10 2016 Jim MacArthur <jim.macarthur@codethink.co.uk> 5.2.1-2.2.lf.0.0
+- add legacy Fortran extensions such as AUTOMATIC, STRUCTURE, RECORD,
+  continued include lines, .xor. operator, and under-specified arrays
+- more lax conversions during assignments and comparisons if
+  -std=extra-legacy is specified
+- basic support for default field widths in format strings
+- UNION and MAP support adapted from Fritz Reese's patches to the
+  gfortran mailing list, enabled by -fdec-structure
+
 * Mon Oct 12 2015 Jakub Jelinek <jakub@redhat.com> 5.2.1-2.2
 - add ld.bfd and ld.gold symlinks (#1269279)
 
