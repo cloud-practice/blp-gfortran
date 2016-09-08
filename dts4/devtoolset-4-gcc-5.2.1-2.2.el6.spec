@@ -261,6 +261,8 @@ Patch2001: doxygen-1.7.1-config.patch
 Patch2002: doxygen-1.7.5-timestamp.patch
 Patch2003: doxygen-1.8.0-rh856725.patch
 
+Patch3000: gcc-dts4-legacy-fortran.patch
+
 %if 0%{?rhel} >= 7
 %global nonsharedver 48
 %else
@@ -636,6 +638,7 @@ cd doxygen-%{doxygen_version}
 %patch2003 -p1 -b .rh856725~
 cd ..
 %endif
+%patch3000 -p1 -b .legacyfortran~
 %endif
 
 echo 'Red Hat %{version}-%{gcc_release}' > gcc/DEV-PHASE
